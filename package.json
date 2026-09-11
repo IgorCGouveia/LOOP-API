@@ -7,7 +7,7 @@
     "test": "vitest run",
     "dev": "tsx watch src/server.ts",
     "build": "prisma generate && tsc && mkdir -p dist/generated && cp -r src/generated/prisma dist/generated/prisma",
-    "start": "node dist/server.js"
+    "start": "prisma migrate deploy && node dist/server.js"
   },
   "keywords": [],
   "author": "",
@@ -18,7 +18,6 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.9.5",
     "@vitest/coverage-v8": "^4.1.10",
-    "prisma": "^6.19.3",
     "typescript": "^6.0.3",
     "vitest": "^4.1.10"
   },
@@ -28,6 +27,7 @@
     "argon2": "^0.44.0",
     "fastify": "^5.8.5",
     "jsonwebtoken": "^9.0.3",
+    "prisma": "^6.19.3",
     "tsx": "^4.22.3",
     "zod": "^4.4.3"
   }
