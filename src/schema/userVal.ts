@@ -1,6 +1,8 @@
 import {z} from 'zod';
 
-export const CreateUserSchema = z.object({
+const IANA_TIMEZONES = new Set(Intl.supportedValuesOf('timeZone'));
+
+export const CreateUserVal = z.object({
     name: z.string()
         .min(3, 'Nome é obrigatório')
         .max(50, 'Maximo 50 caracteres'),
@@ -9,17 +11,27 @@ export const CreateUserSchema = z.object({
         .string()
         .min(8)
         .max(128),
-        
+
     confirmPassword:z
         .string()
         .min(8),
+
+    timezone: z.string()
+        .refine((tz) => IANA_TIMEZONES.has(tz), {
+            message: "Timezone inválido. Use um identificador IANA (ex: 'America/Sao_Paulo').",
+        }),
 })
 .refine(
     (data) =>   data.confirmPassword == data.password,
     "As senhas não coincidem"
 );
 
-export const UpdateUserSchema = CreateUserSchema.partial()
+export const UpdateUserVal = z.object(CreateUserVal.shape)
+.partial()
+.refine(
+    (data) =>   data.confirmPassword == data.password,
+    "As senhas não coincidem"
+);
 
-export type CreateUserInput = z.infer<typeof CreateUserSchema>;
-export type UpdateUserInput = z.infer<typeof UpdateUserSchema>;
+export type CreateUserInput = z.infer<typeof CreateUserVal>;
+export type UpdateUserInput = z.infer<typeof UpdateUserVal>;

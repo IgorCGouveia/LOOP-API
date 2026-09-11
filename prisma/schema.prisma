@@ -1,11 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../src/generated/prisma"
 }
 
@@ -15,14 +9,105 @@ datasource db {
 }
 
 model User {
-  id      String   @id @default(cuid())
-  email   String @unique
-  password String 
-  name    String?
-  role    Role @default(USER)
+  id       String  @id @default(cuid(2))
+  email    String  @unique
+  password String
+  name     String
+  role     Role    @default(USER)
+  timezone String  @default("UTC") // NOVO - IANA (ex:"America/São_Paulo)
+  habits   Habit[]
+}
+
+model Habit {
+  id          String   @id @default(cuid(2))
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logs        HabitLog[]
+  graceFills  GraceFill[]
+  schedules   HabitSchedule[]
+
+  longestStreak   Int @default(0)
+  longestStreakStartDate DateTime? @db.Date
+
+  // grace period de streak ("streak freeze"): saldo por hábito, repõe
+  // +1 por mês (calendário fixo, todo dia 1, em UTC) até um teto de 3.
+  graceTokens          Int      @default(1)
+  graceTokensUpdatedAt DateTime @default(now())
+}
+
+// frequência/meta do hábito, versionada por período. Editar nunca é
+// UPDATE — fecha a versão vigente e abre uma nova. effectiveFrom/
+// effectiveTo marcam o dia; effectiveFromAt/effectiveToAt o instante
+// exato, usado só quando duas versões caem no mesmo dia.
+model HabitSchedule {
+  id      String @id @default(cuid(2))
+  habitId String
+  habit   Habit  @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  effectiveFrom   DateTime  @db.Date
+  effectiveFromAt DateTime
+  effectiveTo     DateTime? @db.Date
+  effectiveToAt   DateTime?
+
+  targetPerDay Int
+  type         ScheduleType
+  daysOfWeek   Int[] // só quando type = WEEKLY
+  intervalDays Int? // só quando type = INTERVAL
+
+  @@unique([habitId, effectiveFromAt])
+  @@index([habitId, effectiveFrom])
+}
+
+model HabitLog{
+  id    String  @id @default(cuid(2))
+  habitId   String
+  habit     Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  checkedAt DateTime @default(now())   // instante bruto em UTC
+  date      DateTime @db.Date          // dia calendário, congelado no timezone do usuário no momento da escrita
+  kind      LogKind  @default(CHECKIN)
+
+  // undo é um evento novo, não apaga o check-in original. undoesId
+  // aponta pro CHECKIN desfeito; @unique impede desfazer duas vezes.
+  undoesId String?   @unique
+  undoes   HabitLog? @relation("UndoCompensates", fields: [undoesId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  undoneBy HabitLog? @relation("UndoCompensates")
+
+  @@index([habitId, date])
+
+}
+
+// dia "perdoado" por um token de grace period — não é um check-in real,
+// é uma marcação de que um gap de 1 dia foi coberto por um token. Fica
+// numa tabela separada (não em HabitLog) pra HabitLog continuar
+// significando só "o usuário fez check-in nesse dia". Ver
+// docs/explain/DECISOES-NAO-IMPLEMENTADAS.md.
+model GraceFill {
+  id      String @id @default(cuid(2))
+  habitId String
+  habit   Habit  @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  date    DateTime @db.Date
+
+  @@unique([habitId, date])
 }
 
 enum Role {
   USER
   ADMIN
 }
+
+enum ScheduleType {
+  DAILY
+  WEEKLY
+  INTERVAL
+}
+
+enum LogKind {
+  CHECKIN
+  UNDO
+}
+
+

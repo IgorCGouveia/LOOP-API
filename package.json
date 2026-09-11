@@ -4,8 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "tsx watch src/app.ts"
+    "test": "vitest run",
+    "dev": "tsx watch src/server.ts",
+    "build": "prisma generate && tsc && mkdir -p dist/generated && cp -r src/generated/prisma dist/generated/prisma",
+    "start": "node dist/server.js"
   },
   "keywords": [],
   "author": "",
@@ -13,14 +15,19 @@
   "type": "commonjs",
   "devDependencies": {
     "@tsconfig/node24": "^24.0.4",
-    "@types/node": "^25.9.1",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^25.9.5",
+    "@vitest/coverage-v8": "^4.1.10",
     "prisma": "^6.19.3",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.10"
   },
   "dependencies": {
+    "@fastify/rate-limit": "^11.2.0",
     "@prisma/client": "^6.19.3",
     "argon2": "^0.44.0",
     "fastify": "^5.8.5",
+    "jsonwebtoken": "^9.0.3",
     "tsx": "^4.22.3",
     "zod": "^4.4.3"
   }

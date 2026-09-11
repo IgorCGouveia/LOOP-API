@@ -3,8 +3,20 @@ import { prisma } from "../app";
 import { CreateUserInput, UpdateUserInput } from "../schema/userVal";
 
 
+export async function FindUser(id: string){
+    const user = await prisma.user.findUnique({
+        where: {id},
+        select: {id: true, email: true, name: true, role: true}
+        });    
+
+    if(!user){
+        return null
+    }
+    return user;
+}
+
+
 export async function createUser(data: CreateUserInput){
-    try{
         const hash = await argon2.hash(data.password, {
             type: argon2.argon2id,
             memoryCost: 2 ** 16,
@@ -17,13 +29,11 @@ export async function createUser(data: CreateUserInput){
                 name: data.name,
                 email: data.email,
                 password: hash,
+                timezone: data.timezone,
             },
             select: {id: true, email: true, name: true, role: true}
         });
         return user;
-    }catch(err){
-        throw err;
-    }
 }
 
 export async function getAllusers(){
@@ -38,6 +48,7 @@ export async function updateUser(id: string, data: UpdateUserInput){
     const payload: any = {};
     if(data.name !== undefined) payload.name = data.name;
     if(data.email !== undefined) payload.email = data.email;
+    if(data.timezone !== undefined) payload.timezone = data.timezone;
     if(data.password !== undefined){
         payload.password = await argon2.hash(data.password, {
             type: argon2.argon2id,
@@ -65,4 +76,14 @@ export async function delUser(id: string){
         select: {id: true, email: true, name: true, role: true}
     });
     return deleted;
+
+    //se nao usasse o onDelete: Cascade no schema do banco de dados ficaria assim:
+    // await prisma.$transaction([ <- garante consistencia para várias operações atomicas no banco
+    //     prisma.habit.deleteMany({
+    //         where: {userId: id},
+    //     }),
+    //     prisma.user.delete({
+    //         where: {id: id}
+    //     })
+    // ])
 }

@@ -17,6 +17,10 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "moduleResolution": "nodenext"
-  }
+    "moduleResolution": "nodenext",
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/__tests__/**"]
 }
