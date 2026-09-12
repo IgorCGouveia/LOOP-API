@@ -12,11 +12,11 @@ export default class UserController{
         
         
         const data = CreateUserVal.parse(req.body);
-        
+
         //vai chamar o service para criar um usuario
         const NewUser = await userService.createUser(data);
 
-        return res.status(201).send(NewUser);
+        return res.status(201).send({ message: "Usuário criado com sucesso.", data: NewUser });
     }
 
 
@@ -25,8 +25,8 @@ export default class UserController{
 
     async GetAll(req:FastifyRequest, res:FastifyReply){
         const users = await userService.getAllusers();
-        return res.status(200).send(users);
-    
+        return res.status(200).send({ message: "Usuários encontrados.", data: users });
+
     }
 
 
@@ -40,25 +40,25 @@ export default class UserController{
         const user = await userService.FindUser(id);
 
         if(user == null){
-            return res.status(404).send("User not found");
+            return res.status(404).send({ error: "Usuário não encontrado." });
         }
 
         if(req.user.id === id){
             const data = UpdateUserVal.parse(req.body);
 
             if( Object.keys(data).length == 0){
-            return res.status(400).send("Nenhum dado para atualizar foi fornecido");
+            return res.status(400).send({ error: "Nenhum dado para atualizar foi fornecido." });
         }
 
         const userUp = await userService.updateUser(id, data);
 
-        return res.status(200).send(userUp);
+        return res.status(200).send({ message: "Usuário atualizado com sucesso.", data: userUp });
         }
 
 
 
-        
-        return res.status(403).send("Você não tem permissão para mudar esse usuario.");
+
+        return res.status(403).send({ error: "Você não tem permissão para mudar esse usuário." });
     }
 
 
@@ -72,17 +72,17 @@ export default class UserController{
         const USER = await userService.FindUser(id);
 
         if(USER == null){
-            return res.status(404).send("user Not Found!");
+            return res.status(404).send({ error: "Usuário não encontrado." });
         }
         const role = USER.role;
 
         if(req.user.id === id || (req.user.role == "ADMIN" && role != "ADMIN")){
 
-            
+
             const deletado = await userService.delUser(id);
-            return res.status(200).send(deletado); 
+            return res.status(200).send({ message: "Usuário deletado com sucesso.", data: deletado });
         }
-        return res.status(403).send("Você não pode deletar o perfil de outra pessoa"); 
+        return res.status(403).send({ error: "Você não pode deletar o perfil de outra pessoa." });
     }
 }
 

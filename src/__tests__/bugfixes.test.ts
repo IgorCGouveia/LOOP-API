@@ -22,7 +22,7 @@ describe("Correções de bugs (docs/problems/PROBLEMAS.md)", () => {
             url: "/users",
             payload: { name: "Usuário Bugfix", email, password, confirmPassword: password, timezone: "America/Sao_Paulo" },
         });
-        userId = createRes.json().id;
+        userId = createRes.json().data.id;
     });
 
     afterAll(async () => {
@@ -44,10 +44,11 @@ describe("Correções de bugs (docs/problems/PROBLEMAS.md)", () => {
             expect(res.statusCode).toBe(400);
 
             const body = res.json();
-            expect(Array.isArray(body)).toBe(true);
-            expect(body.length).toBeGreaterThan(0);
+            expect(typeof body.error).toBe("string");
+            expect(Array.isArray(body.details)).toBe(true);
+            expect(body.details.length).toBeGreaterThan(0);
 
-            for (const issue of body) {
+            for (const issue of body.details) {
                 expect(Object.keys(issue).sort()).toEqual(["campo", "message"]);
             }
 
@@ -63,7 +64,7 @@ describe("Correções de bugs (docs/problems/PROBLEMAS.md)", () => {
                 url: "/login",
                 payload: { email, password },
             });
-            const { accessToken } = loginRes.json();
+            const { accessToken } = loginRes.json().data;
 
             const res = await app.inject({
                 method: "POST",
@@ -74,9 +75,9 @@ describe("Correções de bugs (docs/problems/PROBLEMAS.md)", () => {
 
             expect(res.statusCode).toBe(400);
             const body = res.json();
-            expect(Array.isArray(body)).toBe(true);
-            expect(body[0]).toHaveProperty("campo");
-            expect(body[0]).toHaveProperty("message");
+            expect(Array.isArray(body.details)).toBe(true);
+            expect(body.details[0]).toHaveProperty("campo");
+            expect(body.details[0]).toHaveProperty("message");
         });
     });
 
@@ -115,7 +116,7 @@ describe("Correções de bugs (docs/problems/PROBLEMAS.md)", () => {
                 payload: { email, password },
             });
             expect(res.statusCode).toBe(200);
-            expect(typeof res.json().accessToken).toBe("string");
+            expect(typeof res.json().data.accessToken).toBe("string");
         });
 
         it("SECRET_KEY ausente durante login -> 500 (erro de configuração, não de credencial)", async () => {

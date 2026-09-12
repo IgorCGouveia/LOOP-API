@@ -39,7 +39,7 @@ describe("Fluxo completo: criar usuário -> login -> usar token", () => {
         });
 
         expect(createRes.statusCode).toBe(201);
-        const createdUser = createRes.json();
+        const createdUser = createRes.json().data;
         expect(createdUser.email).toBe(email);
         expect(createdUser).not.toHaveProperty("password");
         userId = createdUser.id;
@@ -51,7 +51,7 @@ describe("Fluxo completo: criar usuário -> login -> usar token", () => {
         });
 
         expect(loginRes.statusCode).toBe(200);
-        const { accessToken } = loginRes.json();
+        const { accessToken } = loginRes.json().data;
         expect(typeof accessToken).toBe("string");
 
         const protectedRes = await app.inject({
@@ -61,6 +61,6 @@ describe("Fluxo completo: criar usuário -> login -> usar token", () => {
         });
 
         expect(protectedRes.statusCode).toBe(200);
-        expect(protectedRes.json()).toEqual([]);
+        expect(protectedRes.json().data).toEqual([]);
     });
 });

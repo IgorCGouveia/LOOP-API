@@ -27,14 +27,14 @@ describe("Ownership (dono vs. não-dono vs. admin)", () => {
             url: "/users",
             payload: { name: "Usuário Teste", email, password, confirmPassword: password, timezone: "America/Sao_Paulo" },
         });
-        const { id } = createRes.json();
+        const { id } = createRes.json().data;
 
         const loginRes = await app.inject({
             method: "POST",
             url: "/login",
             payload: { email, password },
         });
-        const { accessToken } = loginRes.json();
+        const { accessToken } = loginRes.json().data;
 
         return { id, email, accessToken };
     }
@@ -63,7 +63,7 @@ describe("Ownership (dono vs. não-dono vs. admin)", () => {
             headers: { authorization: `Bearer ${ownerToken}` },
             payload: { name: "Hábito pra atualizar" },
         });
-        habitToUpdateId = habit1.json().id;
+        habitToUpdateId = habit1.json().data.id;
 
         const habit2 = await app.inject({
             method: "POST",
@@ -71,7 +71,7 @@ describe("Ownership (dono vs. não-dono vs. admin)", () => {
             headers: { authorization: `Bearer ${ownerToken}` },
             payload: { name: "Hábito pra deletar" },
         });
-        habitToDeleteId = habit2.json().id;
+        habitToDeleteId = habit2.json().data.id;
     });
 
     afterAll(async () => {
@@ -163,7 +163,7 @@ describe("Ownership (dono vs. não-dono vs. admin)", () => {
                 payload: { name: "Nome Atualizado" },
             });
             expect(res.statusCode).toBe(200);
-            expect(res.json().name).toBe("Nome Atualizado");
+            expect(res.json().data.name).toBe("Nome Atualizado");
         });
 
         it("usuário pode atualizar a própria senha, e a senha nova passa a funcionar no login (200)", async () => {
@@ -193,7 +193,7 @@ describe("Ownership (dono vs. não-dono vs. admin)", () => {
             // Reautentica com o novo token, já que o antigo continua válido
             // (JWT stateless não é invalidado ao trocar a senha), mas os
             // testes seguintes assumem que ownerToken condiz com a senha atual.
-            ownerToken = loginComSenhaNova.json().accessToken;
+            ownerToken = loginComSenhaNova.json().data.accessToken;
         });
 
         it("atualizar usuário inexistente retorna 404", async () => {
