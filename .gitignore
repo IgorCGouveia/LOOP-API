@@ -6,5 +6,7 @@ node_modules
 /dist
 *.md
 !README.md
-/docs
+!DECISIONS.md
+/docs/*
+!/docs/API-REFERENCE.md
 /coverage

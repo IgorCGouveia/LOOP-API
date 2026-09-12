@@ -3,10 +3,9 @@
 A backend REST API for a habit tracker — JWT auth, role-based access control,
 timezone-aware streaks, versioned habit schedules, and layered login
 brute-force defense. Built as a portfolio project, deliberately treated as
-production software, with every non-trivial architectural choice recorded as
-proposal → counter-argument → decision → discarded alternative.
+production software.
 
-[![CI](https://github.com/IgorCGouveia/LOOP/actions/workflows/ci.yml/badge.svg)](https://github.com/IgorCGouveia/LOOP/actions/workflows/ci.yml)
+[![CI](https://github.com/IgorCGouveia/LOOP-API/actions/workflows/ci.yml/badge.svg)](https://github.com/IgorCGouveia/LOOP-API/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
@@ -78,14 +77,20 @@ own data (admins can read/manage everyone's).
   missing, too-short, or placeholder `SECRET_KEY`, instead of failing
   silently on the first request.
 
+📄 Full trade-off log — every non-trivial decision as proposal → counter-argument → decision → discarded alternative: [DECISIONS.md](./DECISIONS.md)
+
 ### API
 
 All bodies are JSON. Protected routes take `Authorization: Bearer <token>`.
+Full request/response shapes, error format, and CORS/refresh-token notes
+for a client app: [docs/API-REFERENCE.md](./docs/API-REFERENCE.md).
 
 | Method | Route | Auth | Notes |
 |---|---|---|---|
 | POST | `/users` | — | sign up (rate-limited by IP) |
 | POST | `/login` | — | returns a JWT (rate-limited by IP + account) |
+| POST | `/refresh` | cookie | web client only — issues a new access token, no rotation |
+| POST | `/logout` | cookie | web client only — revokes the refresh token |
 | GET | `/users` | admin | list all users |
 | PATCH | `/users/:id` | owner | partial update |
 | DELETE | `/users/:id` | owner or admin | |
@@ -105,8 +110,8 @@ All bodies are JSON. Protected routes take `Authorization: Bearer <token>`.
 Requires Node 24 and a PostgreSQL instance.
 
 ```bash
-git clone https://github.com/IgorCGouveia/LOOP.git
-cd LOOP
+git clone https://github.com/IgorCGouveia/LOOP-API.git
+cd LOOP-API
 npm install
 ```
 
@@ -115,6 +120,8 @@ Create a `.env` file:
 ```
 DATABASE_URL="postgresql://user:password@localhost:5432/loop?schema=public"
 SECRET_KEY="a random string of at least 32 characters"
+# optional — comma-separated list, only needed for a web client (CORS)
+CORS_ORIGIN="http://localhost:5173"
 ```
 
 ```bash
@@ -178,14 +185,20 @@ usuário só mexe nos próprios dados (admin lê/gerencia de todos).
   `SECRET_KEY` ausente, curta demais ou um valor de exemplo — em vez de
   falhar silenciosamente na primeira requisição.
 
+📄 Log completo de decisões — toda escolha não-trivial no formato proposta → contra-argumentação → decisão → alternativa descartada: [DECISIONS.md](./DECISIONS.md)
+
 ### API
 
 Todos os corpos são JSON. Rotas protegidas usam `Authorization: Bearer <token>`.
+Request/response completo, formato de erro e notas de CORS/refresh token
+pra quem for construir um cliente: [docs/API-REFERENCE.md](./docs/API-REFERENCE.md).
 
 | Método | Rota | Auth | Observação |
 |---|---|---|---|
 | POST | `/users` | — | cadastro (rate limit por IP) |
 | POST | `/login` | — | devolve um JWT (rate limit por IP + por conta) |
+| POST | `/refresh` | cookie | só cliente web — emite accessToken novo, sem rotação |
+| POST | `/logout` | cookie | só cliente web — revoga o refresh token |
 | GET | `/users` | admin | lista todos os usuários |
 | PATCH | `/users/:id` | dono | atualização parcial |
 | DELETE | `/users/:id` | dono ou admin | |
@@ -205,8 +218,8 @@ Todos os corpos são JSON. Rotas protegidas usam `Authorization: Bearer <token>`
 Precisa de Node 24 e uma instância de PostgreSQL.
 
 ```bash
-git clone https://github.com/IgorCGouveia/LOOP.git
-cd LOOP
+git clone https://github.com/IgorCGouveia/LOOP-API.git
+cd LOOP-API
 npm install
 ```
 
@@ -215,6 +228,8 @@ Cria um arquivo `.env`:
 ```
 DATABASE_URL="postgresql://user:senha@localhost:5432/loop?schema=public"
 SECRET_KEY="uma string aleatória com pelo menos 32 caracteres"
+# opcional — lista separada por vírgula, só necessário pra cliente web (CORS)
+CORS_ORIGIN="http://localhost:5173"
 ```
 
 ```bash

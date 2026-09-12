@@ -23,14 +23,14 @@ describe("Gaps de cobertura fechados", () => {
             url: "/users",
             payload: { name: "Usuário Teste", email, password, confirmPassword: password, timezone: "America/Sao_Paulo" },
         });
-        const { id } = createRes.json();
+        const { id } = createRes.json().data;
 
         const loginRes = await app.inject({
             method: "POST",
             url: "/login",
             payload: { email, password },
         });
-        const { accessToken } = loginRes.json();
+        const { accessToken } = loginRes.json().data;
 
         return { id, accessToken };
     }
@@ -104,7 +104,7 @@ describe("Gaps de cobertura fechados", () => {
                 headers: { authorization: `Bearer ${adminToken}` },
             });
             expect(res.statusCode).toBe(200);
-            expect(Array.isArray(res.json())).toBe(true);
+            expect(Array.isArray(res.json().data)).toBe(true);
         });
 
         it("o próprio usuário pode ver os próprios hábitos por essa rota (200)", async () => {
@@ -114,7 +114,7 @@ describe("Gaps de cobertura fechados", () => {
                 headers: { authorization: `Bearer ${userToken}` },
             });
             expect(res.statusCode).toBe(200);
-            expect(Array.isArray(res.json())).toBe(true);
+            expect(Array.isArray(res.json().data)).toBe(true);
         });
 
         it("usuário comum não pode ver hábitos de outro usuário que não seja ele mesmo (403)", async () => {
@@ -145,7 +145,7 @@ describe("Gaps de cobertura fechados", () => {
                 payload: { name: "Beber água" },
             });
             expect(res.statusCode).toBe(201);
-            const habit = res.json();
+            const habit = res.json().data;
             expect(habit.name).toBe("Beber água");
             expect(habit.userId).toBe(userId);
         });
@@ -159,7 +159,7 @@ describe("Gaps de cobertura fechados", () => {
                 headers: { authorization: `Bearer ${adminToken}` },
             });
             expect(res.statusCode).toBe(200);
-            expect(Array.isArray(res.json())).toBe(true);
+            expect(Array.isArray(res.json().data)).toBe(true);
         });
     });
 
@@ -181,7 +181,7 @@ describe("Gaps de cobertura fechados", () => {
                 headers: { authorization: `Bearer ${userToken}` },
                 payload: { name: "Hábito pro teste de corpo vazio" },
             });
-            const habitId = habitRes.json().id;
+            const habitId = habitRes.json().data.id;
 
             const res = await app.inject({
                 method: "PATCH",

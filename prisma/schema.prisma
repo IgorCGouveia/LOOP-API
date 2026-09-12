@@ -9,13 +9,32 @@ datasource db {
 }
 
 model User {
-  id       String  @id @default(cuid(2))
-  email    String  @unique
-  password String
-  name     String
-  role     Role    @default(USER)
-  timezone String  @default("UTC") // NOVO - IANA (ex:"America/São_Paulo)
-  habits   Habit[]
+  id            String         @id @default(cuid(2))
+  email         String         @unique
+  password      String
+  name          String
+  role          Role           @default(USER)
+  timezone      String         @default("UTC") // NOVO - IANA (ex:"America/São_Paulo)
+  habits        Habit[]
+  refreshTokens RefreshToken[]
+}
+
+// refresh token do loop-web (cookie httpOnly). Guarda o hash (sha256), nunca
+// o token em texto puro — mesmo princípio de senha, mas hash rápido: o
+// token já nasce com entropia alta (32 bytes aleatórios), então não precisa
+// do custo de argon2, que existe pra compensar senha de baixa entropia
+// escolhida por humano. Sem rotação: o mesmo token vale até expirar ou até
+// POST /logout marcar revokedAt.
+model RefreshToken {
+  id        String    @id @default(cuid(2))
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 model Habit {

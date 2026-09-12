@@ -23,21 +23,23 @@ export default class Auth{
     const bearer = req.headers.authorization;
 
     if(!bearer){
-        res.status(401).send("Token não informado");
+        res.status(401).send({ error: "Token não informado." });
         return false;
     }
 
     const token = bearer.split(" ")[1];
 
     if(!token){
-        res.status(401).send("Não autorizado. Sem Token");
+        res.status(401).send({ error: "Não autorizado. Sem token." });
         return false;
     }
 
     const secretKey = process.env.SECRET_KEY;
 
     if(!secretKey){
-        res.status(500).send("Sem chave secreta");
+        // não vaza "sem chave secreta" pro cliente — é erro de configuração
+        // do servidor, mesma regra do errorHandler central pra qualquer 500.
+        res.status(500).send({ error: "Erro de configuração do servidor." });
         return false;
     }
 
@@ -49,7 +51,7 @@ export default class Auth{
             role: autenticado.role
         }
     }catch{
-        res.status(401).send("Token inválido ou expirado");
+        res.status(401).send({ error: "Token inválido ou expirado." });
         return false;
     }
 
@@ -63,7 +65,7 @@ admin = async (req: FastifyRequest, res:FastifyReply) =>{
     if(!autenticado) return;
 
     if(req.user.role != "ADMIN"){
-        return res.status(403).send("Você não tem permissão")
+        return res.status(403).send({ error: "Você não tem permissão." })
     }
 
 }
