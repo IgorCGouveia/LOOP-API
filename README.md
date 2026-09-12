@@ -77,14 +77,20 @@ own data (admins can read/manage everyone's).
   missing, too-short, or placeholder `SECRET_KEY`, instead of failing
   silently on the first request.
 
+📄 Full trade-off log — every non-trivial decision as proposal → counter-argument → decision → discarded alternative: [DECISIONS.md](./DECISIONS.md)
+
 ### API
 
 All bodies are JSON. Protected routes take `Authorization: Bearer <token>`.
+Full request/response shapes, error format, and CORS/refresh-token notes
+for a client app: [docs/API-REFERENCE.md](./docs/API-REFERENCE.md).
 
 | Method | Route | Auth | Notes |
 |---|---|---|---|
 | POST | `/users` | — | sign up (rate-limited by IP) |
 | POST | `/login` | — | returns a JWT (rate-limited by IP + account) |
+| POST | `/refresh` | cookie | web client only — issues a new access token, no rotation |
+| POST | `/logout` | cookie | web client only — revokes the refresh token |
 | GET | `/users` | admin | list all users |
 | PATCH | `/users/:id` | owner | partial update |
 | DELETE | `/users/:id` | owner or admin | |
@@ -114,6 +120,8 @@ Create a `.env` file:
 ```
 DATABASE_URL="postgresql://user:password@localhost:5432/loop?schema=public"
 SECRET_KEY="a random string of at least 32 characters"
+# optional — comma-separated list, only needed for a web client (CORS)
+CORS_ORIGIN="http://localhost:5173"
 ```
 
 ```bash
@@ -177,14 +185,20 @@ usuário só mexe nos próprios dados (admin lê/gerencia de todos).
   `SECRET_KEY` ausente, curta demais ou um valor de exemplo — em vez de
   falhar silenciosamente na primeira requisição.
 
+📄 Log completo de decisões — toda escolha não-trivial no formato proposta → contra-argumentação → decisão → alternativa descartada: [DECISIONS.md](./DECISIONS.md)
+
 ### API
 
 Todos os corpos são JSON. Rotas protegidas usam `Authorization: Bearer <token>`.
+Request/response completo, formato de erro e notas de CORS/refresh token
+pra quem for construir um cliente: [docs/API-REFERENCE.md](./docs/API-REFERENCE.md).
 
 | Método | Rota | Auth | Observação |
 |---|---|---|---|
 | POST | `/users` | — | cadastro (rate limit por IP) |
 | POST | `/login` | — | devolve um JWT (rate limit por IP + por conta) |
+| POST | `/refresh` | cookie | só cliente web — emite accessToken novo, sem rotação |
+| POST | `/logout` | cookie | só cliente web — revoga o refresh token |
 | GET | `/users` | admin | lista todos os usuários |
 | PATCH | `/users/:id` | dono | atualização parcial |
 | DELETE | `/users/:id` | dono ou admin | |
@@ -214,6 +228,8 @@ Cria um arquivo `.env`:
 ```
 DATABASE_URL="postgresql://user:senha@localhost:5432/loop?schema=public"
 SECRET_KEY="uma string aleatória com pelo menos 32 caracteres"
+# opcional — lista separada por vírgula, só necessário pra cliente web (CORS)
+CORS_ORIGIN="http://localhost:5173"
 ```
 
 ```bash
