@@ -5,7 +5,7 @@ timezone-aware streaks, versioned habit schedules, and layered login
 brute-force defense. Built as a portfolio project, deliberately treated as
 production software.
 
-[![CI](https://github.com/IgorCGouveia/LOOP/actions/workflows/ci.yml/badge.svg)](https://github.com/IgorCGouveia/LOOP/actions/workflows/ci.yml)
+[![CI](https://github.com/IgorCGouveia/LOOP-API/actions/workflows/ci.yml/badge.svg)](https://github.com/IgorCGouveia/LOOP-API/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
@@ -110,8 +110,8 @@ for a client app: [docs/API-REFERENCE.md](./docs/API-REFERENCE.md).
 Requires Node 24 and a PostgreSQL instance.
 
 ```bash
-git clone https://github.com/IgorCGouveia/LOOP.git
-cd LOOP
+git clone https://github.com/IgorCGouveia/LOOP-API.git
+cd LOOP-API
 npm install
 ```
 
@@ -218,8 +218,8 @@ pra quem for construir um cliente: [docs/API-REFERENCE.md](./docs/API-REFERENCE.
 Precisa de Node 24 e uma instância de PostgreSQL.
 
 ```bash
-git clone https://github.com/IgorCGouveia/LOOP.git
-cd LOOP
+git clone https://github.com/IgorCGouveia/LOOP-API.git
+cd LOOP-API
 npm install
 ```
 
