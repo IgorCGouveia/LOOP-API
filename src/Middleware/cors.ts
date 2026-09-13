@@ -19,5 +19,9 @@ export function registerCors(server: FastifyInstance) {
     server.register(cors, {
         origin: resolveOrigins(),
         credentials: true,
+        // Default do @fastify/cors é só GET,HEAD,POST — sem isso, PATCH e
+        // DELETE (usados em /habits/:id, /users/:id e no undo de checkin)
+        // são bloqueados no preflight para qualquer chamada cross-origin.
+        methods: ["GET", "HEAD", "POST", "PATCH", "DELETE"],
     });
 }
