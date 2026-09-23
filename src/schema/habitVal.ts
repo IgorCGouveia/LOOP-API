@@ -36,7 +36,11 @@ export const CreateHabitVal = z.object({
     schedule: ScheduleVal.optional(),
 })
 
-export const UpdateHabitVal = CreateHabitVal.partial();
+export const UpdateHabitVal = z.object({
+    name: CreateHabitVal.shape.name.optional(),
+    description: CreateHabitVal.shape.description.optional(),
+    schedule: ScheduleVal.optional(),
+});
 
 export type CreateHabitInput = z.infer<typeof CreateHabitVal>;
 export type UpdateHabitInput = z.infer<typeof UpdateHabitVal>;
