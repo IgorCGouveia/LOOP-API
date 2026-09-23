@@ -77,7 +77,6 @@ own data (admins can read/manage everyone's).
   missing, too-short, or placeholder `SECRET_KEY`, instead of failing
   silently on the first request.
 
-📄 Full trade-off log — every non-trivial decision as proposal → counter-argument → decision → discarded alternative: [DECISIONS.md](./DECISIONS.md)
 
 ### API
 
@@ -185,7 +184,6 @@ usuário só mexe nos próprios dados (admin lê/gerencia de todos).
   `SECRET_KEY` ausente, curta demais ou um valor de exemplo — em vez de
   falhar silenciosamente na primeira requisição.
 
-📄 Log completo de decisões — toda escolha não-trivial no formato proposta → contra-argumentação → decisão → alternativa descartada: [DECISIONS.md](./DECISIONS.md)
 
 ### API
 
