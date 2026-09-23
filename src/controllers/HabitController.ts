@@ -59,7 +59,7 @@ export default class HabitController{
 
     async UpdateHabit(req:FastifyRequest, res: FastifyReply){
 
-    const {id} = req.params as {id:string};
+        const {id} = req.params as {id:string};
 
         const habit = await habitService.FindHabit(id)
 
@@ -70,16 +70,16 @@ export default class HabitController{
         const userId = habit.userId;
 
         if(req.user.id === userId ){
-        const data = UpdateHabitVal.parse(req.body);
-        if(Object.keys(data).length == 0){
-            return res.status(400).send({ error: "Nenhum dado para atualizar foi fornecido." });
+            const data = UpdateHabitVal.parse(req.body);
+            if(Object.keys(data).length == 0){
+                return res.status(400).send({ error: "Nenhum dado para atualizar foi fornecido." });
 
-        }
-        const habitUpdate = await habitService.UpdateHabit(id, data)
-        return res.status(200).send({
-            message: "Hábito atualizado com sucesso.",
-            data: habitUpdate
-        })
+            }
+            const habitUpdate = await habitService.UpdateHabit(id, data)
+            return res.status(200).send({
+                message: "Hábito atualizado com sucesso.",
+                data: habitUpdate
+            })
         }
 
         return res.status(403).send({ error: "Você não tem permissão para mudar os hábitos de outra pessoa." })
