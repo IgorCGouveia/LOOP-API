@@ -17,9 +17,10 @@ if (process.env.VERCEL_ENV !== "production") {
     process.exit(0);
 }
 
-const url = process.env.DIRECT_URL || process.env.DATABASE_URL;
+// DATABASE_URL_UNPOOLED é o nome que a integração Neon da Vercel injeta.
+const url = process.env.DIRECT_URL || process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
 if (!url) {
-    console.error("[migrate] DIRECT_URL/DATABASE_URL ausentes.");
+    console.error("[migrate] DIRECT_URL/DATABASE_URL_UNPOOLED/DATABASE_URL ausentes.");
     process.exit(1);
 }
 
