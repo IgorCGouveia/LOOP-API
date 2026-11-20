@@ -133,8 +133,12 @@ export async function CreateCheckIn(habitId: string, ownerId: string) {
         // recálculo futuro. Gap de 2+ dias-alvo não é perdoável.
         const skippedTargetDays = lastDate ? targetDaysBetween(schedules, lastDate, today) : [];
 
+        // o CHECKIN vem antes do fill pra o fill poder apontar pra ele —
+        // é esse vínculo que deixa o undo devolver o token (ADR-0004).
+        const checkin = await checkinRepository.insertLogEvent(habitId, today, 'CHECKIN', undefined, tx);
+
         if (skippedTargetDays.length === 1 && graceTokens > 0) {
-            await checkinRepository.insertGraceFill(habitId, skippedTargetDays[0], tx);
+            await checkinRepository.insertGraceFill(habitId, skippedTargetDays[0], checkin.id, tx);
             const debited = await tx.habit.update({
                 where: { id: habitId },
                 data: { graceTokens: { decrement: 1 } },
@@ -142,8 +146,6 @@ export async function CreateCheckIn(habitId: string, ownerId: string) {
             });
             graceTokens = debited.graceTokens;
         }
-
-        const checkin = await checkinRepository.insertLogEvent(habitId, today, 'CHECKIN', undefined, tx);
 
         const datesAsc = await checkinRepository.getEffectiveLog(habitId, schedules, tx);
         const tail = computeTailStreak([...datesAsc].reverse(), isContiguous);
@@ -199,6 +201,18 @@ export async function UndoCheckIn(habitId: string) {
 
         // undo é um evento novo (kind: UNDO), não apaga o CHECKIN original.
         await checkinRepository.insertLogEvent(habitId, lastLog.date, 'UNDO', lastLog.id, tx);
+
+        // se o CHECKIN desfeito gastou um token, o dia perdoado por ele sai
+        // do log efetivo e o token volta (ADR-0004). Sem isso, o próximo
+        // check-in enxerga só 1 dia pulado depois do fill órfão e perdoa
+        // um gap de 2 dias-alvo com um 2º token (issue #21).
+        const compensated = await checkinRepository.deleteGraceFillOfCheckIn(lastLog.id, tx);
+        if (compensated > 0) {
+            await tx.habit.update({
+                where: { id: habitId },
+                data: { graceTokens: Math.min(habit.graceTokens + 1, GRACE_TOKENS_CAP) },
+            });
+        }
 
         const datesAsc = await checkinRepository.getEffectiveLog(habitId, schedules, tx);
         const currentStreak = computeTailStreak([...datesAsc].reverse(), isContiguous).length;

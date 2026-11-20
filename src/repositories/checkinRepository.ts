@@ -63,8 +63,18 @@ export async function getNetCountOnDay(habitId: string, day: Date, db: Db = pris
     return checkins - undos;
 }
 
-export async function insertGraceFill(habitId: string, date: Date, db: Db = prisma) {
-    return db.graceFill.create({ data: { habitId, date } });
+// `checkinId` é o CHECKIN que gastou o token — é por ele que o undo acha
+// o fill pra compensar (ADR-0004).
+export async function insertGraceFill(habitId: string, date: Date, checkinId: string, db: Db = prisma) {
+    return db.graceFill.create({ data: { habitId, date, checkinId } });
+}
+
+// apaga o grace fill criado por um CHECKIN, se houver. Devolve quantos
+// apagou (0 ou 1): fills anteriores ao vínculo têm checkinId null e
+// nunca são achados aqui.
+export async function deleteGraceFillOfCheckIn(checkinId: string, db: Db = prisma): Promise<number> {
+    const { count } = await db.graceFill.deleteMany({ where: { checkinId } });
+    return count;
 }
 
 // ---------- schedule ----------

@@ -95,6 +95,9 @@ model HabitLog{
   undoes   HabitLog? @relation("UndoCompensates", fields: [undoesId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   undoneBy HabitLog? @relation("UndoCompensates")
 
+  // grace fill que este CHECKIN gastou um token pra criar (se gastou)
+  graceFill GraceFill?
+
   @@index([habitId, date])
 
 }
@@ -102,13 +105,18 @@ model HabitLog{
 // dia "perdoado" por um token de grace period — não é um check-in real,
 // é uma marcação de que um gap de 1 dia foi coberto por um token. Fica
 // numa tabela separada (não em HabitLog) pra HabitLog continuar
-// significando só "o usuário fez check-in nesse dia". Ver
-// docs/explain/DECISOES-NAO-IMPLEMENTADAS.md.
+// significando só "o usuário fez check-in nesse dia".
+//
+// checkinId aponta pro CHECKIN que gastou o token. Desfazer esse CHECKIN
+// apaga o fill e devolve o token (doc-2/adr/0004). Linhas anteriores a
+// essa coluna ficam com null e não são compensadas.
 model GraceFill {
-  id      String @id @default(cuid(2))
-  habitId String
-  habit   Habit  @relation(fields: [habitId], references: [id], onDelete: Cascade)
-  date    DateTime @db.Date
+  id        String    @id @default(cuid(2))
+  habitId   String
+  habit     Habit     @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  date      DateTime  @db.Date
+  checkinId String?   @unique
+  checkin   HabitLog? @relation(fields: [checkinId], references: [id], onDelete: SetNull)
 
   @@unique([habitId, date])
 }
