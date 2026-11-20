@@ -1,9 +1,25 @@
 import { prisma } from '../db';
-import type { HabitSchedule } from '../generated/prisma/client';
+import type { HabitSchedule, Prisma } from '../generated/prisma/client';
 import { isCompleted } from '../domain/schedule';
 
-// Único módulo que toca prisma.habitLog/prisma.graceFill/prisma.habitSchedule
-// — enforced por src/__tests__/checkinRepositoryBoundary.test.ts.
+// Único módulo que toca habitLog/graceFill/habitSchedule, seja pelo client
+// global, seja pelo `tx` de uma transação — enforced por
+// src/__tests__/checkinRepositoryBoundary.test.ts.
+//
+// Unidade de trabalho (issue #20): as funções que um caso de uso chama
+// dentro de prisma.$transaction aceitam `db` no último parâmetro. Sem ele,
+// usam o client global e cada chamada é um commit próprio, como antes.
+export type Db = Prisma.TransactionClient;
+
+// ---------- trava por hábito ----------
+
+// SELECT ... FOR UPDATE na linha do hábito: serializa check-in e undo do
+// mesmo hábito. Sem isso, duas requisições paralelas leem o mesmo log,
+// as duas acham o mesmo dia pulado e uma delas bate no unique de
+// GraceFill (issue #18). Só tem efeito dentro de uma transação.
+export async function lockHabit(db: Db, habitId: string): Promise<void> {
+    await db.$queryRaw`SELECT id FROM "Habit" WHERE id = ${habitId} FOR UPDATE`;
+}
 
 // ---------- eventos (HabitLog) ----------
 
@@ -12,13 +28,14 @@ export async function insertLogEvent(
     date: Date,
     kind: 'CHECKIN' | 'UNDO',
     undoesId?: string,
+    db: Db = prisma,
 ) {
-    return prisma.habitLog.create({ data: { habitId, date, kind, undoesId } });
+    return db.habitLog.create({ data: { habitId, date, kind, undoesId } });
 }
 
 // CHECKIN mais recente que ainda não foi desfeito (sem UNDO apontando pra ele).
-export async function findUndoableCheckIn(habitId: string) {
-    return prisma.habitLog.findFirst({
+export async function findUndoableCheckIn(habitId: string, db: Db = prisma) {
+    return db.habitLog.findFirst({
         where: { habitId, kind: 'CHECKIN', undoneBy: null },
         orderBy: { checkedAt: 'desc' },
     });
@@ -40,29 +57,27 @@ export async function findCheckInsByUser(userId: string) {
     });
 }
 
-export async function getNetCountOnDay(habitId: string, day: Date): Promise<number> {
-    const [checkins, undos] = await Promise.all([
-        prisma.habitLog.count({ where: { habitId, date: day, kind: 'CHECKIN' } }),
-        prisma.habitLog.count({ where: { habitId, date: day, kind: 'UNDO' } }),
-    ]);
+export async function getNetCountOnDay(habitId: string, day: Date, db: Db = prisma): Promise<number> {
+    const checkins = await db.habitLog.count({ where: { habitId, date: day, kind: 'CHECKIN' } });
+    const undos = await db.habitLog.count({ where: { habitId, date: day, kind: 'UNDO' } });
     return checkins - undos;
 }
 
-export async function insertGraceFill(habitId: string, date: Date) {
-    return prisma.graceFill.create({ data: { habitId, date } });
+export async function insertGraceFill(habitId: string, date: Date, db: Db = prisma) {
+    return db.graceFill.create({ data: { habitId, date } });
 }
 
 // ---------- schedule ----------
 
-export async function getScheduleVersions(habitId: string): Promise<HabitSchedule[]> {
-    return prisma.habitSchedule.findMany({
+export async function getScheduleVersions(habitId: string, db: Db = prisma): Promise<HabitSchedule[]> {
+    return db.habitSchedule.findMany({
         where: { habitId },
         orderBy: { effectiveFromAt: 'asc' },
     });
 }
 
-export async function getCurrentSchedule(habitId: string): Promise<HabitSchedule | null> {
-    return prisma.habitSchedule.findFirst({ where: { habitId, effectiveTo: null } });
+export async function getCurrentSchedule(habitId: string, db: Db = prisma): Promise<HabitSchedule | null> {
+    return db.habitSchedule.findFirst({ where: { habitId, effectiveTo: null } });
 }
 
 // evita N+1 quando uma listagem de hábitos precisa do schedule de cada um.
@@ -84,26 +99,35 @@ export type ScheduleInput = {
 // lugar, mesmo se os valores forem idênticos a uma versão anterior
 // (decisão de 04/09: sempre aceita o corte, sem detectar reversão).
 // `today` é o dia local de quem edita (timezone do dono do hábito).
-export async function createScheduleVersion(habitId: string, data: ScheduleInput, today: Date) {
+// Com `db`, roda dentro da transação de quem chama; sem ele, abre uma
+// própria (fechar a vigente e abrir a nova nunca podem se separar).
+export async function createScheduleVersion(
+    habitId: string,
+    data: ScheduleInput,
+    today: Date,
+    db?: Db,
+): Promise<HabitSchedule> {
+    if (!db) {
+        return prisma.$transaction((tx) => createScheduleVersion(habitId, data, today, tx));
+    }
+
     const now = new Date();
 
-    return prisma.$transaction(async (tx) => {
-        await tx.habitSchedule.updateMany({
-            where: { habitId, effectiveTo: null },
-            data: { effectiveTo: today, effectiveToAt: now },
-        });
+    await db.habitSchedule.updateMany({
+        where: { habitId, effectiveTo: null },
+        data: { effectiveTo: today, effectiveToAt: now },
+    });
 
-        return tx.habitSchedule.create({
-            data: {
-                habitId,
-                type: data.type,
-                targetPerDay: data.targetPerDay,
-                daysOfWeek: data.daysOfWeek ?? [],
-                intervalDays: data.intervalDays,
-                effectiveFrom: today,
-                effectiveFromAt: now,
-            },
-        });
+    return db.habitSchedule.create({
+        data: {
+            habitId,
+            type: data.type,
+            targetPerDay: data.targetPerDay,
+            daysOfWeek: data.daysOfWeek ?? [],
+            intervalDays: data.intervalDays,
+            effectiveFrom: today,
+            effectiveFromAt: now,
+        },
     });
 }
 
@@ -113,12 +137,19 @@ export async function createScheduleVersion(habitId: string, data: ScheduleInput
  * unidos aos dias perdoados por token (GraceFill). `schedules`, se já
  * tiver sido buscado por quem chama, evita uma query repetida.
  */
-export async function getEffectiveLog(habitId: string, schedules?: HabitSchedule[]): Promise<Date[]> {
-    const [events, resolvedSchedules, graceFills] = await Promise.all([
-        prisma.habitLog.findMany({ where: { habitId }, select: { date: true, kind: true, checkedAt: true } }),
-        schedules ? Promise.resolve(schedules) : getScheduleVersions(habitId),
-        prisma.graceFill.findMany({ where: { habitId }, select: { date: true } }),
-    ]);
+export async function getEffectiveLog(
+    habitId: string,
+    schedules?: HabitSchedule[],
+    db: Db = prisma,
+): Promise<Date[]> {
+    // sequencial de propósito: dentro de uma transação interativa as
+    // queries dividem uma conexão só, então Promise.all não ganha nada.
+    const events = await db.habitLog.findMany({
+        where: { habitId },
+        select: { date: true, kind: true, checkedAt: true },
+    });
+    const resolvedSchedules = schedules ?? (await getScheduleVersions(habitId, db));
+    const graceFills = await db.graceFill.findMany({ where: { habitId }, select: { date: true } });
 
     const daysWithEvents = new Map<number, Date>();
     for (const e of events) daysWithEvents.set(e.date.getTime(), e.date);
