@@ -7,7 +7,8 @@
     "test": "vitest run",
     "dev": "tsx watch src/server.ts",
     "build": "prisma generate && tsc && mkdir -p dist/generated && cp -r src/generated/prisma dist/generated/prisma",
-    "start": "prisma migrate deploy && node dist/server.js"
+    "start": "prisma migrate deploy && node dist/server.js",
+    "vercel-build": "prisma generate && tsc --noEmit && node scripts/vercel-migrate.mjs && mkdir -p public"
   },
   "keywords": [],
   "author": "",
