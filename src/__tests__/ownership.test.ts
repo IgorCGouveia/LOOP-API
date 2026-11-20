@@ -145,6 +145,82 @@ describe("Ownership (dono vs. não-dono vs. admin)", () => {
         });
     });
 
+    // issue #17 / ADR-0005: rotas no nível do hábito são só do dono, como
+    // diz docs/API-REFERENCE.md — admin incluso.
+    describe("Check-ins (política única de acesso ao hábito)", () => {
+        it("dono faz check-in no próprio hábito (201)", async () => {
+            const res = await app.inject({
+                method: "POST",
+                url: `/habits/${habitToUpdateId}/checkin`,
+                headers: { authorization: `Bearer ${ownerToken}` },
+            });
+            expect(res.statusCode).toBe(201);
+        });
+
+        it.each([
+            ["POST", "checkin", "Você não tem permissão para fazer check-in no hábito de outra pessoa."],
+            ["DELETE", "checkin", "Você não tem permissão para desfazer o check-in do hábito de outra pessoa."],
+            ["GET", "checkins", "Você não tem permissão para ver os check-ins do hábito de outra pessoa."],
+        ] as const)("admin não acessa %s /habits/:id/%s de outra pessoa (403)", async (method, path, message) => {
+            const res = await app.inject({
+                method,
+                url: `/habits/${habitToUpdateId}/${path}`,
+                headers: { authorization: `Bearer ${adminToken}` },
+            });
+            expect(res.statusCode).toBe(403);
+            expect(res.json()).toEqual({ error: message });
+        });
+
+        it("não-dono não faz check-in no hábito de outra pessoa (403)", async () => {
+            const res = await app.inject({
+                method: "POST",
+                url: `/habits/${habitToUpdateId}/checkin`,
+                headers: { authorization: `Bearer ${otherToken}` },
+            });
+            expect(res.statusCode).toBe(403);
+        });
+
+        it("o check-in do dono continua lá depois das tentativas negadas", async () => {
+            const count = await prisma.habitLog.count({ where: { habitId: habitToUpdateId } });
+            expect(count).toBe(1);
+        });
+
+        it("admin continua vendo os check-ins pelo usuário (GET /users/:userId/checkins, 200)", async () => {
+            const res = await app.inject({
+                method: "GET",
+                url: `/users/${ownerId}/checkins`,
+                headers: { authorization: `Bearer ${adminToken}` },
+            });
+            expect(res.statusCode).toBe(200);
+            expect(res.json().data).toHaveLength(1);
+        });
+
+        it("admin não atualiza hábito de outra pessoa (403), igual a antes", async () => {
+            const res = await app.inject({
+                method: "PATCH",
+                url: `/habits/${habitToUpdateId}`,
+                headers: { authorization: `Bearer ${adminToken}` },
+                payload: { name: "Nome do admin" },
+            });
+            expect(res.statusCode).toBe(403);
+            expect(res.json()).toEqual({ error: "Você não tem permissão para mudar os hábitos de outra pessoa." });
+        });
+
+        it("check-in em hábito inexistente retorna 404 antes da checagem de dono", async () => {
+            const res = await app.inject({
+                method: "POST",
+                url: "/habits/id-que-nao-existe/checkin",
+                headers: { authorization: `Bearer ${adminToken}` },
+            });
+            expect(res.statusCode).toBe(404);
+        });
+
+        it("sem token, a rota de check-in para no 401 (a checagem de acesso nem roda)", async () => {
+            const res = await app.inject({ method: "POST", url: `/habits/${habitToUpdateId}/checkin` });
+            expect(res.statusCode).toBe(401);
+        });
+    });
+
     describe("Usuários", () => {
         it("não-dono não pode atualizar perfil de outro usuário (403)", async () => {
             const res = await app.inject({

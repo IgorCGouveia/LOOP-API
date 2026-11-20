@@ -1,5 +1,6 @@
 import {prisma } from '../db';
 import {CreateHabitInput, UpdateHabitInput} from  '../schema/habitVal'
+import type { Habit } from '../generated/prisma/client';
 import * as checkinRepository from '../repositories/checkinRepository';
 import { getDateOnlyInTimezone } from '../utils/date';
 
@@ -12,16 +13,6 @@ async function ensureUserExists(userId: string)
         return null
     }
     return exist;
-}
-
-async function ensureHabitExists(id: string){
-    const exist = await prisma.habit.findUnique({where: {id}})
-    if(!exist){
-        return null
-
-    }
-    return exist;
-
 }
 
 async function attachSchedules<T extends { id: string }>(habits: T[]) {
@@ -95,14 +86,11 @@ export async function GetAllHabits(){
     return attachSchedules(habits);
 }
 
-export async function UpdateHabit(id: string,data: UpdateHabitInput){
+// recebe o hábito já carregado pelo requireHabitAccess, sem buscar de novo.
+export async function UpdateHabit(habit: Habit, data: UpdateHabitInput){
 
-    const habit = await ensureHabitExists(id);
+    const { id } = habit;
     const { schedule, ...rest } = data;
-
-    if (!habit) {
-        return null;
-    }
 
     const owner = schedule ? await prisma.user.findUnique({ where: { id: habit.userId } }) : null;
     const today = getDateOnlyInTimezone(new Date(), owner?.timezone ?? 'UTC');
@@ -127,8 +115,6 @@ export async function UpdateHabit(id: string,data: UpdateHabitInput){
 
 
 export async function DeleteHabit(id: string){
-
-    await ensureHabitExists(id);
 
     const deleted = await prisma.habit.delete({where: {id}})
 
