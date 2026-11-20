@@ -7,7 +7,11 @@
     "test": "vitest run",
     "dev": "tsx watch src/server.ts",
     "build": "prisma generate && tsc && mkdir -p dist/generated && cp -r src/generated/prisma dist/generated/prisma",
-    "start": "prisma migrate deploy && node dist/server.js"
+    "start": "prisma migrate deploy && node dist/server.js",
+    "vercel-build": "if [ \"$VERCEL_ENV\" = \"production\" ]; then prisma migrate deploy; fi && npm run build && mkdir -p public"
+  },
+  "engines": {
+    "node": "24.x"
   },
   "keywords": [],
   "author": "",

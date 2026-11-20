@@ -17,10 +17,11 @@ production software.
 ![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
 ![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)
-![Render](https://img.shields.io/badge/Render-46E3B7?style=for-the-badge&logo=render&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
+![Neon](https://img.shields.io/badge/Neon-00E599?style=for-the-badge&logo=neon&logoColor=black)
 
-**Live:** https://loop-api-wz74.onrender.com _(free tier — first request after
-idle can take 30-60s to wake up)_
+**Live:** `<URL_DA_API>` _(serverless free tier — the first request after
+idle can take a few seconds while the function and the database wake up)_
 
 <p align="center">
   <a href="#english"><img src="https://img.shields.io/badge/🇺🇸-English-blue?style=for-the-badge" /></a>
@@ -53,7 +54,7 @@ own data (admins can read/manage everyone's).
 | Rate limiting | `@fastify/rate-limit` (IP layer) + a hand-rolled account-level delay tracker |
 | Tests | Vitest, integration tests via `app.inject()` against a real Postgres — no DB mocking |
 | CI | GitHub Actions (service Postgres, type-check gate, test suite) |
-| Deploy | Render (Web Service + managed Postgres) |
+| Deploy | Vercel (serverless function) + Neon (serverless Postgres) — see [deploy guide](./doc-2/guides/deploy-vercel.md) |
 
 ### Highlights
 
@@ -127,8 +128,12 @@ CORS_ORIGIN="http://localhost:5173"
 npx prisma migrate deploy   # apply the schema
 npm run dev                 # tsx watch, no build step
 npm test                    # vitest, runs against the real DB above
-npm run build && npm start  # production build
+npm run build && npm start  # production build (long-running process)
 ```
+
+Production runs on Vercel through `api/index.js` instead of `npm start`;
+migrations are applied by the `vercel-build` script on production deploys
+only. Step by step: [doc-2/guides/deploy-vercel.md](./doc-2/guides/deploy-vercel.md).
 
 ### License
 
@@ -160,7 +165,7 @@ usuário só mexe nos próprios dados (admin lê/gerencia de todos).
 | Rate limiting | `@fastify/rate-limit` (camada de IP) + um tracker de atraso por conta feito à mão |
 | Testes | Vitest, testes de integração via `app.inject()` contra um Postgres real — sem mock de banco |
 | CI | GitHub Actions (Postgres de serviço, gate de tipo, suíte de testes) |
-| Deploy | Render (Web Service + Postgres gerenciado) |
+| Deploy | Vercel (função serverless) + Neon (Postgres serverless) — ver [guia de deploy](./doc-2/guides/deploy-vercel.md) |
 
 ### Destaques
 
@@ -234,8 +239,12 @@ CORS_ORIGIN="http://localhost:5173"
 npx prisma migrate deploy   # aplica o schema
 npm run dev                 # tsx watch, sem passo de build
 npm test                    # vitest, roda contra o banco real acima
-npm run build && npm start  # build de produção
+npm run build && npm start  # build de produção (processo longo)
 ```
+
+Em produção a API roda na Vercel pelo `api/index.js`, sem `npm start`; as
+migrations são aplicadas pelo script `vercel-build`, só no deploy de
+produção. Passo a passo: [doc-2/guides/deploy-vercel.md](./doc-2/guides/deploy-vercel.md).
 
 ### Licença
 

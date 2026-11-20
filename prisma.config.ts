@@ -12,5 +12,11 @@ export default defineConfig({
   engine: "classic",
   datasource: {
     url: env("DATABASE_URL"),
+    // Conexão direta (sem PgBouncer) só pro CLI — `migrate deploy` usa
+    // advisory lock, que o pooler do Neon em modo transaction não suporta.
+    // Opcional: sem DIRECT_URL (dev local, CI) o Prisma usa a própria `url`.
+    // O Prisma Client em runtime não lê este arquivo; ele usa a URL pooled
+    // do `schema.prisma`.
+    directUrl: process.env.DIRECT_URL,
   },
 });

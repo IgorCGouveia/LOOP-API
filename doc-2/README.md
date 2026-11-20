@@ -24,7 +24,8 @@ A estrutura segue dois padrões comuns no mercado:
 | [`architecture/`](./architecture/) | Explicação | Visão geral, camadas, modelo de domínio e as regras de negócio que não aparecem nos tipos |
 | [`adr/`](./adr/) | Decisões | Um arquivo por decisão: contexto, opções, escolha, consequências |
 | [`investigations/`](./investigations/) | Análise | Investigação de um problema concreto (geralmente uma issue): o que acontece, por quê, como reproduzir |
-| [`reference/`](./reference/) | Referência | Contrato HTTP e configuração |
+| [`guides/`](./guides/) | Guia | Passo a passo de tarefas operacionais (deploy) |
+| [`reference/`](./reference/) | Referência | Contrato HTTP, configuração e hospedagem |
 | [`glossary.md`](./glossary.md) | Referência | Termos do domínio (dia local, dia-alvo, grace fill...) |
 
 ## Índice
@@ -33,6 +34,7 @@ A estrutura segue dois padrões comuns no mercado:
 - [Modelo de domínio e invariantes](./architecture/domain-model.md)
 - [Glossário](./glossary.md)
 - [Registro de decisões (ADRs)](./adr/README.md)
+- [Guia de deploy (Vercel + Neon)](./guides/deploy-vercel.md)
 - Investigações
   - [Issue #15: PATCH /users deixa trocar o timezone](./investigations/issue-15-timezone-patch.md)
 

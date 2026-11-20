@@ -38,13 +38,27 @@ integrar está aqui.
 
 ## URLs
 
-- **Produção**: `https://loop-api-wz74.onrender.com`
+- **Produção**: `<URL_DA_API>` (Vercel — preencher depois do primeiro deploy)
+- **Pelo `loop-web` em produção**: `/api/...` no próprio domínio do front
+  (rewrite da Vercel para a API — ver "Cookie de refresh e o rewrite `/api`" abaixo)
 - **Local**: `http://localhost:3333` (ou a `PORT`/`HOST` que você setar)
 
-⚠️ **Free tier do Render**: o serviço dorme depois de um tempo sem uso. A
-primeira requisição depois disso leva **30-60s** pra responder (cold start).
-Um cliente decente precisa de timeout generoso e alguma indicação visual de
-"carregando" nessa primeira chamada — não é bug, é a infra grátis.
+⚠️ **Cold start (Vercel + Neon, free tier)**: a função e o banco desligam
+depois de um tempo sem uso. A primeira requisição depois disso pode levar
+**alguns segundos**. Um cliente decente precisa de timeout generoso e alguma
+indicação visual de "carregando" nessa primeira chamada — não é bug, é a
+infra grátis.
+
+### Cookie de refresh e o rewrite `/api` (só `loop-web`)
+
+Front e API ficam em projetos separados na Vercel. Como `vercel.app` está na
+Public Suffix List, chamar a API direto faria o cookie de refresh virar
+cookie de terceiros — o Safari bloqueia, e o `/refresh` falha sem erro
+visível. Por isso o `loop-web` chama **`/api/...` no próprio domínio** e um
+rewrite no `vercel.json` do front repassa para a API, tirando o prefixo
+(`/api/login` → `<URL_DA_API>/login`). As rotas documentadas aqui não mudam.
+Configuração: `doc-2/guides/deploy-vercel.md`; decisão: ADR-0007 em
+`doc-2/adr/`.
 
 ## CORS (configurado em 12/09/2026 — só relevante pro `loop-web`)
 
@@ -57,7 +71,7 @@ A origem vem da env var `CORS_ORIGIN` da API (lista separada por vírgula,
 ex.: `CORS_ORIGIN=https://loop-web.exemplo.com`) — sem ela, a API cai num
 default de desenvolvimento (`localhost:5173`/`localhost:3000`) e **não**
 libera nenhum domínio de produção. Se o `loop-web` for hospedado em outro
-domínio, isso precisa ser configurado no dashboard do Render da API antes
+domínio, isso precisa ser configurado nas variáveis de ambiente do projeto da API na Vercel antes
 do deploy do `loop-web` — trabalho no repo da API, não no repo do
 cliente.
 

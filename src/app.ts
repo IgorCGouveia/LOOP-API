@@ -21,8 +21,10 @@ export function buildApp(){
 
 
     //inicia o fastify com logging
-    // trustProxy: true — Render é hop único de proxy; sem isso o rate limit
-    // de IP vira global
+    // trustProxy: true — o IP do cliente vem do X-Forwarded-For que a Vercel
+    // preenche; sem isso o rate limit de IP enxerga só o proxy e vira global.
+    // Pelo rewrite /api do loop-web, ainda não foi verificado se o IP que
+    // chega é o do usuário ou o da borda — ver doc-2/adr/0006.
      const server = Fastify({logger: true, trustProxy: true});
     registerCors(server);
     server.register(cookie);

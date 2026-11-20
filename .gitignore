@@ -7,7 +7,9 @@ node_modules
 *.md
 !README.md
 !DECISIONS.md
+!/doc-2/**/*.md
 /docs/*
 !/docs/API-REFERENCE.md
-!/doc-2/**/*.md
 /coverage
+.vercel
+/public
