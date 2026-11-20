@@ -9,4 +9,5 @@ node_modules
 !DECISIONS.md
 /docs/*
 !/docs/API-REFERENCE.md
+!/doc-2/**/*.md
 /coverage

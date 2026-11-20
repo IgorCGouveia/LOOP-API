@@ -46,6 +46,10 @@ A estrutura segue dois padrões comuns no mercado:
 - Um ADR com status `Proposto` ainda não foi decidido. Código não deve
   depender dele até virar `Aceito`.
 - PR que muda comportamento documentado atualiza a doc no mesmo PR.
+- O `.gitignore` da raiz ignora `*.md`. Os arquivos desta pasta só são
+  versionados por causa da exceção `!/doc-2/**/*.md`. Antes de abrir um
+  PR com doc nova, confira com `git status --short --ignored doc-2` se
+  nada ficou de fora.
 
 ## Dívida de documentação conhecida
 
