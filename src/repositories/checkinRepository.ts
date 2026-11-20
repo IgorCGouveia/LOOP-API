@@ -141,6 +141,38 @@ export async function createScheduleVersion(
     });
 }
 
+// ---------- backfill de hábitos legados (src/scripts/habitScheduleBackfill.ts) ----------
+
+// versão com instante explícito: o backfill usa o createdAt do hábito como
+// effectiveFromAt, que é como a correção reconhece essas linhas depois.
+export async function insertBackfilledScheduleVersion(
+    habitId: string,
+    data: ScheduleInput,
+    effectiveFrom: Date,
+    effectiveFromAt: Date,
+    db: Db = prisma,
+): Promise<HabitSchedule> {
+    return db.habitSchedule.create({
+        data: {
+            habitId,
+            type: data.type,
+            targetPerDay: data.targetPerDay,
+            daysOfWeek: data.daysOfWeek ?? [],
+            intervalDays: data.intervalDays,
+            effectiveFrom,
+            effectiveFromAt,
+        },
+    });
+}
+
+export async function getFirstScheduleVersion(habitId: string, db: Db = prisma): Promise<HabitSchedule | null> {
+    return db.habitSchedule.findFirst({ where: { habitId }, orderBy: { effectiveFromAt: 'asc' } });
+}
+
+export async function setScheduleEffectiveFrom(scheduleId: string, effectiveFrom: Date, db: Db = prisma) {
+    return db.habitSchedule.update({ where: { id: scheduleId }, data: { effectiveFrom } });
+}
+
 /**
  * Lista, em ordem ascendente e sem duplicata, todos os dias que contam
  * pro cálculo de streak de um hábito — dias com completed(D) verdadeiro,
