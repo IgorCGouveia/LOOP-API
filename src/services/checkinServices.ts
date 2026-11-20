@@ -235,6 +235,15 @@ export async function UndoCheckIn(habitId: string) {
     });
 }
 
+// recorde recalculado do zero a partir do log efetivo. Só leitura — usado
+// pela auditoria (src/scripts/audit-integrity.ts) pra achar longestStreak
+// inflado por escritas parciais de antes da issue #16.
+export async function RecomputeLongestStreak(habitId: string): Promise<number> {
+    const schedules = await checkinRepository.getScheduleVersions(habitId);
+    const datesAsc = await checkinRepository.getEffectiveLog(habitId, schedules);
+    return recalculateLongestStreak(datesAsc, buildContiguity(schedules)).length;
+}
+
 export async function GetCheckInsByHabit(habitId: string) {
     return checkinRepository.findCheckInsByHabit(habitId);
 }

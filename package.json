@@ -9,7 +9,8 @@
     "build": "prisma generate && tsc && mkdir -p dist/generated && cp -r src/generated/prisma dist/generated/prisma",
     "start": "prisma migrate deploy && node dist/server.js",
     "backfill:schedules": "tsx src/scripts/backfill-habit-schedules.ts",
-    "fix:backfill-effective-from": "tsx src/scripts/fix-backfill-effective-from.ts"
+    "fix:backfill-effective-from": "tsx src/scripts/fix-backfill-effective-from.ts",
+    "audit:integrity": "tsx src/scripts/audit-integrity.ts"
   },
   "keywords": [],
   "author": "",

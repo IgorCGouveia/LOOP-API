@@ -141,6 +141,17 @@ export async function createScheduleVersion(
     });
 }
 
+// ---------- auditoria (src/scripts/audit-integrity.ts) ----------
+
+export async function findHabitIdsWithoutSchedule(): Promise<string[]> {
+    const rows = await prisma.habit.findMany({ where: { schedules: { none: {} } }, select: { id: true } });
+    return rows.map((r) => r.id);
+}
+
+export async function findGraceFills(habitId: string) {
+    return prisma.graceFill.findMany({ where: { habitId }, orderBy: { date: 'asc' } });
+}
+
 // ---------- backfill de hábitos legados (src/scripts/habitScheduleBackfill.ts) ----------
 
 // versão com instante explícito: o backfill usa o createdAt do hábito como
