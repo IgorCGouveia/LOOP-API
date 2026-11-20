@@ -111,14 +111,21 @@ caso ganha um campo `details` a mais, sem deixar de ter `error`.
 | Corpo inválido (Zod) | `400` | `{ "error": "Dados inválidos.", "details": [{ "campo": "email", "message": "Formato de email inválido." }, ...] }` |
 | Sem token / token inválido / login errado | `401` | `{ "error": "..." }` |
 | Autenticado mas sem permissão | `403` | `{ "error": "..." }` |
-| Recurso não encontrado | `404` | `{ "error": "..." }` |
-| Conflito (ex: email duplicado) | `409` | `{ "error": "Email já cadastrado." }` |
+| Recurso não encontrado | `404` | `{ "error": "..." }` — inclui `{ "error": "Registro não encontrado." }` quando o recurso some no meio da requisição (ex: dois `DELETE` paralelos no mesmo hábito: um recebe `200`, o outro `404`) |
+| Conflito: email duplicado | `409` | `{ "error": "Email já cadastrado." }` |
+| Conflito: outra operação no mesmo hábito terminou antes | `409` | `{ "error": "Outra operação no mesmo hábito terminou antes desta. Tente de novo." }` — pode repetir a requisição |
+| Conflito: outro valor único repetido | `409` | `{ "error": "Registro duplicado." }` |
 | Rate limit estourado (IP ou conta) | `429` | `{ "statusCode": 429, "error": "Too Many Requests", "reqId": "..." }` + header `Retry-After` |
 | Erro não esperado / config ausente | `500` | `{ "statusCode": 500, "error": "Internal Server Error", "reqId": "..." }` — **nunca** vaza detalhe interno, use o `reqId` só se for debugar com quem tem acesso ao log do servidor |
 
 Um handler de erro único (`if (!res.ok) throw new Error(body.error)`)
 cobre a API inteira — não precisa mais inspecionar o tipo do corpo antes
 de saber ler.
+
+**`500` em escrita não grava nada.** Criar/editar hábito, check-in e
+desfazer check-in rodam cada um numa transação só: ou tudo é gravado, ou
+nada é. Depois de um `500` nessas rotas, repetir a requisição é seguro e
+não duplica o check-in.
 
 ## Rate limiting (o que o cliente precisa saber)
 
@@ -340,7 +347,8 @@ tem que ser o objeto inteiro** da união discriminada — não dá pra mandar s�
 ### `POST /habits/:habitId/checkin` — dono
 
 Registra o check-in de hoje (o "hoje" é calculado no timezone do dono do
-hábito, não no timezone de quem chama).
+hábito, não no timezone de quem chama). Só o dono: admin também recebe
+`403` nas três rotas `/habits/:habitId/checkin(s)`.
 
 ```json
 // 201
@@ -360,7 +368,9 @@ hábito, não no timezone de quem chama).
 
 ### `DELETE /habits/:habitId/checkin` — dono
 
-Desfaz o check-in mais recente ainda não desfeito.
+Desfaz o check-in mais recente ainda não desfeito. Se esse check-in
+gastou um grace token (cobriu um dia pulado), o dia perdoado deixa de
+contar e o token volta pro saldo, respeitando o teto de 3.
 
 ```json
 // 200
