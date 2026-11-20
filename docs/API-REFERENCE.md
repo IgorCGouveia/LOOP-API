@@ -237,8 +237,18 @@ Lista todos os usuários.
 
 ### `PATCH /users/:id` — dono
 
-Qualquer subconjunto dos campos de criação (parcial). Se vier `password`,
-`confirmPassword` também precisa vir e bater.
+Qualquer subconjunto de `name`, `email`, `password`, `confirmPassword`
+(parcial). Se vier `password`, `confirmPassword` também precisa vir e
+bater.
+
+**`timezone` não pode ser alterado** depois do cadastro. Qualquer chave
+fora da lista acima (`timezone`, `role`, etc.) é rejeitada com `400`, e
+nada é gravado, nem os campos válidos que vieram junto:
+
+```json
+// 400
+{ "error": "Dados inválidos.", "details": [{ "campo": "", "message": "Campo não pode ser alterado: timezone." }] }
+```
 
 ```json
 // 200 — mesmo shape do POST /users
@@ -379,6 +389,7 @@ Mesma coisa, de todos os hábitos do usuário.
   silenciosamente (`credentials: "include"`), repetir a chamada original
   se conseguir; só redirecionar pro login se o refresh também falhar.
 - **Fuso horário mostrado pro usuário**: a API guarda e calcula tudo no
-  timezone que foi setado no cadastro (não muda depois via `PATCH` sem
-  reconsiderar o que isso faz com dias já fechados — ver `DECISIONS.md`
-  do repo da API se precisar entender esse detalhe).
+  timezone informado no cadastro, e ele não muda depois (`PATCH /users/:id`
+  com `timezone` responde `400`). Vale escolher bem esse valor na tela de
+  cadastro, por exemplo pré-preenchendo com o fuso do aparelho. O motivo
+  está em `doc-2/adr/0002-timezone-do-usuario-apos-cadastro.md`.

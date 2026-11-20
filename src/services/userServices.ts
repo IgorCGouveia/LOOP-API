@@ -48,7 +48,6 @@ export async function updateUser(id: string, data: UpdateUserInput){
     const payload: any = {};
     if(data.name !== undefined) payload.name = data.name;
     if(data.email !== undefined) payload.email = data.email;
-    if(data.timezone !== undefined) payload.timezone = data.timezone;
     if(data.password !== undefined){
         payload.password = await argon2.hash(data.password, {
             type: argon2.argon2id,
