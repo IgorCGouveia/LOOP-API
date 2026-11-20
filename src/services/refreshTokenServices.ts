@@ -1,4 +1,4 @@
-import { prisma } from "../app";
+import { prisma } from "../db";
 import { generateOpaqueToken, hashToken } from "../utils/token";
 
 // 7 dias — padrão de mercado pra refresh token, sem exigência de produto

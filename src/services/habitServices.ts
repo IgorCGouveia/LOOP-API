@@ -1,4 +1,4 @@
-import {prisma } from '../app';
+import {prisma } from '../db';
 import {CreateHabitInput, UpdateHabitInput} from  '../schema/habitVal'
 import * as checkinRepository from '../repositories/checkinRepository';
 import { getDateOnlyInTimezone } from '../utils/date';

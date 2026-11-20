@@ -2,7 +2,6 @@ import 'dotenv/config'
 import Fastify from "fastify"
 import cookie from "@fastify/cookie";
 import {userRoutes} from './routes/UserRoute';
-import { PrismaClient } from './generated/prisma/client';
 import { habitRoutes } from './routes/HabitRoute';
 import { checkinRoutes } from './routes/CheckinRoute';
 import { LoginRoute } from './routes/indexRoute';
@@ -10,12 +9,7 @@ import { errorHandler } from './Middleware/errorHandler';
 import { registerRateLimit } from './Middleware/rateLimit';
 import { registerCors } from './Middleware/cors';
 
-//instância global do Prisma Client(instância unica)
-//pooling
-//vai ser usado na camada de services para comunicar com o banco
-export const prisma = new PrismaClient();
-
-
+// o PrismaClient mora em ./db (issue #22): app.ts é só a raiz HTTP.
 
 export function buildApp(){
 

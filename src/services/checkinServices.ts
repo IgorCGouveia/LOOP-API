@@ -1,8 +1,9 @@
-import { prisma } from '../app';
+import { prisma } from '../db';
 import { FindHabit } from './habitServices';
 import * as checkinRepository from '../repositories/checkinRepository';
 import type { Habit, HabitSchedule } from '../generated/prisma/client';
 import { getDateOnlyInTimezone } from '../utils/date';
+import { targetDaysBetween } from '../domain/schedule';
 
 const GRACE_TOKENS_CAP = 3;
 
@@ -13,7 +14,7 @@ type Contiguity = (earlier: Date, later: Date) => boolean;
 // mais "exatamente 1 dia de calendário", porque WEEKLY/INTERVAL têm
 // dias-alvo não-adjacentes no calendário.
 function buildContiguity(schedules: HabitSchedule[]): Contiguity {
-    return (earlier, later) => checkinRepository.targetDaysBetween(schedules, earlier, later).length === 0;
+    return (earlier, later) => targetDaysBetween(schedules, earlier, later).length === 0;
 }
 
 // streak atual: sem janela fixa, conta a sequência contígua mais recente
@@ -120,7 +121,7 @@ export async function CreateCheckIn(habitId: string, ownerId: string) {
     // gap de exatamente 1 dia-alvo pulado consome 1 token, gravando o
     // dia em GraceFill pra ele contar como contíguo em qualquer
     // recálculo futuro. Gap de 2+ dias-alvo não é perdoável.
-    const skippedTargetDays = lastDate ? checkinRepository.targetDaysBetween(schedules, lastDate, today) : [];
+    const skippedTargetDays = lastDate ? targetDaysBetween(schedules, lastDate, today) : [];
 
     if (skippedTargetDays.length === 1 && graceTokens > 0) {
         await checkinRepository.insertGraceFill(habitId, skippedTargetDays[0]);

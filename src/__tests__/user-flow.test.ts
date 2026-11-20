@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
 import type { FastifyInstance } from "fastify";
-import { buildApp, prisma } from "../app";
+import { buildApp } from "../app";
+import { prisma } from "../db";
 import { attemptTracker } from "../services/attemptTracker";
 
 describe("Fluxo completo: criar usuário -> login -> usar token", () => {

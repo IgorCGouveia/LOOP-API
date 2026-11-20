@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
 import jwt from "jsonwebtoken";
 import type { FastifyInstance } from "fastify";
-import { buildApp, prisma } from "../app";
+import { buildApp } from "../app";
+import { prisma } from "../db";
 import { attemptTracker } from "../services/attemptTracker";
 
 describe("Ownership (dono vs. não-dono vs. admin)", () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isTargetDay, targetDaysBetween } from "../repositories/checkinRepository";
+import { isTargetDay, targetDaysBetween } from "../domain/schedule";
 import type { HabitSchedule } from "../generated/prisma/client";
 
 function day(iso: string): Date {

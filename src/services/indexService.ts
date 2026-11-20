@@ -1,5 +1,5 @@
 import argon2  from 'argon2';
-import {prisma} from '../app';
+import {prisma} from '../db';
 import jwt from 'jsonwebtoken';
 import type { User } from '../generated/prisma/client';
 

@@ -1,5 +1,4 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { prisma } from "../app";
 import { CreateUserVal, UpdateUserVal } from "../schema/userVal";
 import * as userService from "../services/userServices"
 

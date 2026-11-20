@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from "vitest";
 import type { FastifyInstance } from "fastify";
-import { buildApp, prisma } from "../app";
+import { buildApp } from "../app";
+import { prisma } from "../db";
 import { attemptTracker } from "../services/attemptTracker";
 
 // issue #15 / doc-2/adr/0002: timezone é congelado no cadastro. Trocar
