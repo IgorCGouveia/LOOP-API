@@ -1,9 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import Fastify from "fastify";
-import jwt from "jsonwebtoken";
-import type { FastifyInstance } from "fastify";
-import { buildApp } from "../app";
-import { prisma } from "../db";
 import { errorHandler } from "../Middleware/errorHandler";
 import { Prisma } from "../generated/prisma";
 
@@ -55,69 +51,5 @@ describe("errorHandler: erros conhecidos do Prisma", () => {
     });
 });
 
-describe("requisições paralelas no mesmo hábito", () => {
-    let app: FastifyInstance;
-    let userId: string;
-    let token: string;
-    const auth = () => ({ authorization: `Bearer ${token}` });
-
-    beforeAll(async () => {
-        app = buildApp();
-        await app.ready();
-        const user = await prisma.user.create({
-            data: { name: "Usuário Conflitos", email: `conflicts-${Date.now()}@example.com`, password: "hash-fake", timezone: "America/Sao_Paulo" },
-        });
-        userId = user.id;
-        token = jwt.sign({ id: userId, role: "USER" }, process.env.SECRET_KEY as string, { expiresIn: "3650d" });
-    });
-
-    afterEach(() => vi.useRealTimers());
-
-    afterAll(async () => {
-        await prisma.habit.deleteMany({ where: { userId } }).catch(() => {});
-        await prisma.user.deleteMany({ where: { id: userId } }).catch(() => {});
-        await app.close();
-        await prisma.$disconnect();
-    });
-
-    it("dois check-ins paralelos com 1 dia pulado: os dois gravam e o token é gasto uma vez só", async () => {
-        vi.useFakeTimers({ toFake: ["Date"] });
-        vi.setSystemTime(new Date("2026-11-16T15:00:00.000Z"));
-        const created = await app.inject({
-            method: "POST",
-            url: "/habits",
-            headers: auth(),
-            payload: { name: "Paralelo", schedule: { type: "DAILY", targetPerDay: 2 } },
-        });
-        const habitId = created.json().data.id as string;
-        await app.inject({ method: "POST", url: `/habits/${habitId}/checkin`, headers: auth() });
-        await app.inject({ method: "POST", url: `/habits/${habitId}/checkin`, headers: auth() });
-
-        vi.setSystemTime(new Date("2026-11-18T15:00:00.000Z"));
-        const responses = await Promise.all([
-            app.inject({ method: "POST", url: `/habits/${habitId}/checkin`, headers: auth() }),
-            app.inject({ method: "POST", url: `/habits/${habitId}/checkin`, headers: auth() }),
-        ]);
-
-        for (const res of responses) {
-            expect(res.body).not.toContain("Email já cadastrado.");
-            expect(res.statusCode).toBe(201);
-        }
-        expect(await prisma.habitLog.count({ where: { habitId, kind: "CHECKIN", date: new Date("2026-11-18T00:00:00.000Z") } })).toBe(2);
-        expect(await prisma.graceFill.count({ where: { habitId } })).toBe(1);
-        const habit = await prisma.habit.findUniqueOrThrow({ where: { id: habitId } });
-        expect(habit.graceTokens).toBe(0);
-    });
-
-    it("dois DELETE paralelos no mesmo hábito: um apaga, o outro recebe 404", async () => {
-        const created = await app.inject({ method: "POST", url: "/habits", headers: auth(), payload: { name: "Apagar 2x" } });
-        const habitId = created.json().data.id as string;
-
-        const responses = await Promise.all([
-            app.inject({ method: "DELETE", url: `/habits/${habitId}`, headers: auth() }),
-            app.inject({ method: "DELETE", url: `/habits/${habitId}`, headers: auth() }),
-        ]);
-
-        expect(responses.map((r) => r.statusCode).sort()).toEqual([200, 404]);
-    });
-});
+// as corridas reais (check-ins e DELETE paralelos) ficam em
+// concurrency.test.ts, com barreira pra serem determinísticas.
