@@ -74,6 +74,14 @@ de ler, então requisições paralelas no mesmo hábito entram em fila. Ver
 
 - Vitest com testes de integração via `app.inject()` contra um Postgres
   real, sem mock de banco.
+- `src/__tests__/globalSetup.ts` confere, antes da suíte, as variáveis,
+  se o banco é local (ou é o CI), se ele responde e se as migrações
+  estão aplicadas. Local: `docker-compose.test.yml` + `.env.test` (ver o
+  README, seção "Testes").
+- Corridas entre requisições são testadas com uma barreira
+  (`src/__tests__/helpers/barrier.ts`) que segura as duas num ponto exato
+  do caso de uso, então o resultado não depende de timing
+  (`concurrency.test.ts`).
 - CI (`.github/workflows/ci.yml`): `prisma generate`, depois
   `tsc --noEmit` como checagem de tipos, depois `prisma migrate deploy`,
   depois `npm test`.

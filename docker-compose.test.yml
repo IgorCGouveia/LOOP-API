@@ -1,0 +1,20 @@
+# Postgres descartável só para a suíte de testes. Não use para dev nem
+# aponte o .env para ele: os testes criam e apagam dados.
+#   npm run test:db:up    sobe e espera ficar pronto
+#   npm run test:db:down  derruba e apaga os dados
+services:
+  postgres-test:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: loop_test
+    ports:
+      - "55432:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test -d loop_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 15

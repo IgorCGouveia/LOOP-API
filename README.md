@@ -126,9 +126,26 @@ CORS_ORIGIN="http://localhost:5173"
 ```bash
 npx prisma migrate deploy   # apply the schema
 npm run dev                 # tsx watch, no build step
-npm test                    # vitest, runs against the real DB above
 npm run build && npm start  # production build
 ```
+
+### Tests
+
+The suite runs against a real, disposable Postgres, never the database in
+your `.env`. It refuses to run against a non-local host (except in CI or
+with `LOOP_TEST_ALLOW_REMOTE_DB=1`), because the tests create and delete
+data.
+
+```bash
+cp .env.test.example .env.test       # test-only values, git-ignored
+npm run test:db:up                   # Postgres in Docker on port 55432
+set -a; . ./.env.test; set +a; npx prisma migrate deploy
+npm test                             # loads .env.test automatically
+npm run test:db:down                 # stop it and drop the data
+```
+
+If something is missing (variables, database down, pending migrations),
+`npm test` stops before running and says what to fix.
 
 ### License
 
@@ -233,9 +250,26 @@ CORS_ORIGIN="http://localhost:5173"
 ```bash
 npx prisma migrate deploy   # aplica o schema
 npm run dev                 # tsx watch, sem passo de build
-npm test                    # vitest, roda contra o banco real acima
 npm run build && npm start  # build de produção
 ```
+
+### Testes
+
+A suíte roda contra um Postgres real e descartável, nunca o banco do seu
+`.env`. Ela se recusa a rodar contra um host que não seja local (fora do
+CI ou sem `LOOP_TEST_ALLOW_REMOTE_DB=1`), porque os testes criam e apagam
+dados.
+
+```bash
+cp .env.test.example .env.test       # valores só de teste, fora do git
+npm run test:db:up                   # Postgres em Docker na porta 55432
+set -a; . ./.env.test; set +a; npx prisma migrate deploy
+npm test                             # carrega o .env.test sozinho
+npm run test:db:down                 # derruba e apaga os dados
+```
+
+Se faltar algo (variáveis, banco fora do ar, migração pendente), o
+`npm test` para antes de rodar e diz o que corrigir.
 
 ### Licença
 
