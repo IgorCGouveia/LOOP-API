@@ -45,6 +45,7 @@ A estrutura segue dois padrões comuns no mercado:
   - [Issue #15: PATCH /users deixa trocar o timezone](./investigations/issue-15-timezone-patch.md)
   - [Auditoria da suíte de testes (2026-11-20)](./investigations/2026-11-20-auditoria-de-testes.md)
   - [Auditoria de segurança (2026-11-20)](./investigations/auditoria-seguranca-2026-11-20.md)
+  - [Auditoria de arquitetura, dados e deploy (2026-11-21)](./investigations/auditoria-arquitetura-deploy-2026-11-21.md)
 
 ## Convenções
 
