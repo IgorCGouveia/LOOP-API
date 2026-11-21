@@ -8,7 +8,7 @@ A referência campo a campo é a spec OpenAPI em
 (`src/__tests__/openapi.test.ts`) falha se uma rota registrada não estiver
 na spec ou se a spec tiver rota que não existe. Ele não confere os campos:
 mudou um schema Zod, atualize o YAML no mesmo PR. Ver
-[ADR-0003](../adr/0003-documentacao-openapi.md).
+[ADR-0008](../adr/0008-documentacao-openapi.md).
 
 O [`docs/API-REFERENCE.md`](../../docs/API-REFERENCE.md) continua como guia
 para quem constrói um cliente: fluxo de refresh, CORS e onde guardar o token.

@@ -7,7 +7,7 @@ import { parse } from "yaml";
 // de schemas nas rotas: gerar exigiria pôr JSON Schema de resposta em cada
 // rota, e o Fastify usa esse schema para serializar a resposta, descartando
 // campos que não estiverem nele. O teste openapi.test.ts garante que toda
-// rota registrada aparece na spec. Ver doc-2/adr/0003-documentacao-openapi.md.
+// rota registrada aparece na spec. Ver doc-2/adr/0008-documentacao-openapi.md.
 //
 // O arquivo é lido com readFileSync(path.join(__dirname, ...)) porque a
 // Vercel empacota a Function rastreando os arquivos referenciados no código,

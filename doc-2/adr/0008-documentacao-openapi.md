@@ -1,4 +1,4 @@
-# ADR-0003: Como manter a spec OpenAPI junto com o código?
+# ADR-0008: Como manter a spec OpenAPI junto com o código?
 
 - **Status:** Aceito (opção A)
 - **Data:** 2026-11-20
