@@ -6,7 +6,7 @@ import { prisma } from "../db";
 import * as checkinRepository from "../repositories/checkinRepository";
 
 // Falha injetada no meio de cada caso de uso (issues #16, #19, #20,
-// ADR-0003). O mock é parcial: as funções reais continuam rodando, e cada
+// ADR-0009). O mock é parcial: as funções reais continuam rodando, e cada
 // teste troca uma chamada só por um erro.
 vi.mock("../repositories/checkinRepository", async (importOriginal) => {
     const real = await importOriginal<typeof import("../repositories/checkinRepository")>();

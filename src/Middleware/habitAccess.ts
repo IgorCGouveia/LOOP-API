@@ -14,7 +14,7 @@ export type HabitAction = "habit:update" | "habit:delete" | "checkin:create" | "
 
 type Rule = { allowAdmin: boolean; forbidden: string };
 
-// Política de acesso a um hábito, num lugar só (issue #17, ADR-0005).
+// Política de acesso a um hábito, num lugar só (issue #17, ADR-0011).
 // Espelha docs/API-REFERENCE.md: toda rota no nível do hábito é só do
 // dono. Admin enxerga check-ins de qualquer um por
 // GET /users/:userId/checkins, que não passa por aqui.

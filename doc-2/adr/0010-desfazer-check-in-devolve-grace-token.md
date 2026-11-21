@@ -1,9 +1,9 @@
-# ADR-0004: O que acontece com o grace fill quando o check-in que o criou é desfeito?
+# ADR-0010: O que acontece com o grace fill quando o check-in que o criou é desfeito?
 
 - **Status:** Proposto
 - **Data:** 2026-11-20
 - **Decisor:** dono do projeto
-- **Relacionado:** issue #21, [ADR-0003](./0003-unidade-de-trabalho-por-caso-de-uso.md), invariante [I3](../architecture/domain-model.md#i3-o-log-só-cresce); commit `b4e1b60`
+- **Relacionado:** issue #21, [ADR-0009](./0009-unidade-de-trabalho-por-caso-de-uso.md), invariante [I3](../architecture/domain-model.md#i3-o-log-só-cresce); commit `b4e1b60`
 
 ## Contexto
 

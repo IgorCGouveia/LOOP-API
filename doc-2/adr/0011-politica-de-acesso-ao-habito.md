@@ -1,4 +1,4 @@
-# ADR-0005: Admin pode agir nos check-ins de outra pessoa?
+# ADR-0011: Admin pode agir nos check-ins de outra pessoa?
 
 - **Status:** Proposto
 - **Data:** 2026-11-20

@@ -12,7 +12,8 @@
     "start": "prisma migrate deploy && node dist/server.js",
     "backfill:schedules": "tsx src/scripts/backfill-habit-schedules.ts",
     "fix:backfill-effective-from": "tsx src/scripts/fix-backfill-effective-from.ts",
-    "audit:integrity": "tsx src/scripts/audit-integrity.ts"
+    "audit:integrity": "tsx src/scripts/audit-integrity.ts",
+    "vercel-build": "prisma generate && tsc --noEmit && node scripts/vercel-migrate.mjs"
   },
   "keywords": [],
   "author": "",
@@ -36,6 +37,7 @@
     "jsonwebtoken": "^9.0.3",
     "prisma": "^6.19.3",
     "tsx": "^4.22.3",
+    "yaml": "^2.9.1",
     "zod": "^4.4.3"
   }
 }

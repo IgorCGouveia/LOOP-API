@@ -145,7 +145,7 @@ describe("Ownership (dono vs. não-dono vs. admin)", () => {
         });
     });
 
-    // issue #17 / ADR-0005: rotas no nível do hábito são só do dono, como
+    // issue #17 / ADR-0011: rotas no nível do hábito são só do dono, como
     // diz docs/API-REFERENCE.md — admin incluso.
     describe("Check-ins (política única de acesso ao hábito)", () => {
         it("dono faz check-in no próprio hábito (201)", async () => {
