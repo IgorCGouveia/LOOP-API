@@ -26,6 +26,7 @@ Formato de Michael Nygard. Cada arquivo registra uma decisão. Use o
 | [0005](./0005-postgresql-como-banco.md) | PostgreSQL como banco de dados | Aceito (retroativo) |
 | [0006](./0006-autenticacao-jwt-e-refresh-em-cookie.md) | Autenticação com JWT curto e refresh token opaco em cookie | Aceito (retroativo) |
 | [0007](./0007-desenho-das-rotas-usuarios-e-habitos.md) | Desenho das rotas de usuários, hábitos e check-ins | Aceito (retroativo) |
+| [0008](./0008-documentacao-openapi.md) | Como manter a spec OpenAPI junto com o código? | Aceito (opção A) |
 
 ## ADRs retroativos
 
