@@ -1,6 +1,10 @@
 import {z} from 'zod';
 
-const IANA_TIMEZONES = new Set(Intl.supportedValuesOf('timeZone'));
+// Intl.supportedValuesOf devolve só os nomes canônicos por região e deixa
+// "UTC" de fora, embora o Intl aceite "UTC" e ele seja o default da
+// coluna (prisma/schema.prisma). Sem a inclusão manual, ninguém conseguia
+// se cadastrar em UTC.
+const IANA_TIMEZONES = new Set([...Intl.supportedValuesOf('timeZone'), 'UTC']);
 
 // regras por campo, compartilhadas entre cadastro e update. O que é
 // compartilhado é a validação de cada campo, não a lista de campos —
