@@ -1,6 +1,6 @@
 # ADR-0010: O que acontece com o grace fill quando o check-in que o criou é desfeito?
 
-- **Status:** Proposto
+- **Status:** Aceito (opção A)
 - **Data:** 2026-11-20
 - **Decisor:** dono do projeto
 - **Relacionado:** issue #21, [ADR-0009](./0009-unidade-de-trabalho-por-caso-de-uso.md), invariante [I3](../architecture/domain-model.md#i3-o-log-só-cresce); commit `b4e1b60`
@@ -55,7 +55,7 @@ saber o que compensar.
 - Ganha: nenhuma mudança.
 - Perde: o bug do exemplo continua.
 
-## Recomendação (implementada neste PR)
+## Recomendação
 
 Opção A. O espírito do "só cresce" (I3) é sobre os eventos do usuário,
 e eles continuam intactos. A opção B paga uma complicação de unique só
@@ -68,7 +68,12 @@ devolvidos não são debitados de novo).
 
 ## Decisão
 
-<Preencher quando o status for Aceito.>
+Opção A, aceita pelo dono do projeto em 2026-11-21.
+
+O `GraceFill` guarda o `checkinId` do CHECKIN que o criou. Desfazer esse
+CHECKIN apaga o fill e devolve o token, respeitando o teto de 3. Fills
+gravados antes da coluna existir ficam com `checkinId` null e não são
+compensados.
 
 ## Consequências
 
