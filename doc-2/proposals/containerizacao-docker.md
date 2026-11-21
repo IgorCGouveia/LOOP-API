@@ -198,7 +198,6 @@ Pequenas, e entram junto com o Dockerfile:
 |---|---|
 | Tratar `SIGTERM` em `server.ts`: `server.close()` e depois `prisma.$disconnect()` | `docker stop` esperou os 10 s de timeout e matou o processo. Em deploy, as requisições em andamento caem. |
 | `GET /health/live` e `GET /health/ready` (este faz `SELECT 1`) | `HEALTHCHECK` da imagem e health check do provedor |
-| `dotenv` em `dependencies` | Hoje ele só vem pelo `c12`, dependência do Prisma. Na imagem de runtime isso funciona por acaso. |
 | Mover `tsx` para `devDependencies` | Ele está em `dependencies` e vai para a imagem de produção sem ser usado lá |
 
 Com o health check pronto, a imagem ganha:

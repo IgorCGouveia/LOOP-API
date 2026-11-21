@@ -21,6 +21,7 @@ número.
 | C1 e D5: check-in e undo sem transação | Corrigido no PR #26. Transação por caso de uso com `SELECT ... FOR UPDATE` no `Habit`, [ADR-0009](../adr/0009-unidade-de-trabalho-por-caso-de-uso.md) (`Proposto`, opção A implementada). A ADR que esta revisão propunha para isso foi retirada por ser a mesma pergunta. |
 | R6: admin fazia check-in no hábito alheio, mas não editava | Corrigido no PR #26. Só o dono age nas rotas do hábito (`requireHabitAccess`), [ADR-0011](../adr/0011-politica-de-acesso-ao-habito.md) (`Proposto`, opção A implementada). |
 | Hospedagem | A API saiu do Render e roda na Vercel desde o PR #27, sem ADR. Ver [ADR-0016](../adr/0016-runtime-de-deploy.md). |
+| D8: `dotenv` sem declaração no `package.json` | Corrigido no PR #33. |
 | Referência HTTP | Spec OpenAPI escrita à mão e servida em `/docs` (PR #30, [ADR-0008](../adr/0008-documentacao-openapi.md)). |
 
 O resto continua valendo e está atualizado abaixo.
@@ -88,7 +89,7 @@ O que já está bom e deve ser mantido:
 | D5 | ~~`graceTokens` e `longestStreak` atualizados fora de transação.~~ | Resolvido no PR #26 | Ver a seção 0. |
 | D6 | `HabitSchedule` não tem restrição no banco para os campos por tipo (`daysOfWeek` só em `WEEKLY`, `intervalDays` só em `INTERVAL`). Só o Zod garante. | `schema.prisma:77-78` | Uma escrita fora da rota (script, backfill) pode gravar agenda inválida. |
 | D7 | Nenhuma restrição garante uma única versão vigente (`effectiveTo IS NULL`) por hábito. | `createScheduleVersion`, `checkinRepository.ts:114` | A trava da ADR-0009 cobre check-in e undo, não a edição de agenda. Dois `PATCH` concorrentes com `schedule` podem deixar duas versões abertas, e `find(s => s.effectiveTo === null)` pega a primeira que achar. |
-| D8 | `dotenv` é importado (`app.ts:1`, `db.ts:1`, `server.ts:1`, `prisma.config.ts:3`) mas não está no `package.json`. Ele só existe porque o `c12` (do Prisma) depende dele. | `package-lock.json:1447` | Se o Prisma trocar de dependência, o boot quebra sem nenhuma mudança no projeto. |
+| D8 | ~~`dotenv` importado sem estar no `package.json`.~~ | Resolvido no PR #33 | Ver a seção 0. |
 
 ### 3.2 Mudanças propostas
 
@@ -141,7 +142,7 @@ ALTER TABLE "HabitSchedule" ADD CONSTRAINT "target_positive" CHECK ("targetPerDa
 
 D4: um job que roda `DELETE FROM "RefreshToken" WHERE "expiresAt" < now() - interval '1 day'`.
 Pode ser um cron do provedor ou um comando `node dist/jobs/cleanup.js`
-no mesmo container. D8: adicionar `dotenv` em `dependencies`.
+no mesmo container.
 
 A mudança de modelo que depende de decisão (colunas materializadas de
 streak) está no [ADR-0015](../adr/0015-custo-do-calculo-de-streak.md).
@@ -368,19 +369,18 @@ intencional):
 
 1. `setNotFoundHandler` para o 404 sair no formato da API (S2).
 2. `SIGTERM` em `src/server.ts` e `/health/*` (C8, C9).
-3. `dotenv` no `package.json` (D8).
-4. Dockerfile e compose para dev e CI ([plano](./containerizacao-docker.md)).
+3. Dockerfile e compose para dev e CI ([plano](./containerizacao-docker.md)).
 
 Precisam de aprovação de migration:
 
-5. Índices D1, D3, D4 e restrições D6, D7.
-6. Email sem diferença de maiúsculas (D2), com deduplicação antes.
+4. Índices D1, D3, D4 e restrições D6, D7.
+5. Email sem diferença de maiúsculas (D2), com deduplicação antes.
 
 Precisam de decisão nos ADRs:
 
-7. [ADR-0013](../adr/0013-formato-de-erro.md) formato de erro e
+6. [ADR-0013](../adr/0013-formato-de-erro.md) formato de erro e
    [ADR-0014](../adr/0014-paginacao.md) paginação, juntos com o `/v1`.
-8. [ADR-0015](../adr/0015-custo-do-calculo-de-streak.md) custo do streak.
-9. [ADR-0016](../adr/0016-runtime-de-deploy.md) manter a Vercel ou ir para container.
-10. As ADRs 0009 e 0011 da `main` estão `Proposto` com a opção A já
-    implementada. Falta só aceitar ou trocar.
+7. [ADR-0015](../adr/0015-custo-do-calculo-de-streak.md) custo do streak.
+8. [ADR-0016](../adr/0016-runtime-de-deploy.md) manter a Vercel ou ir para container.
+9. As ADRs 0009 e 0011 da `main` estão `Proposto` com a opção A já
+   implementada. Falta só aceitar ou trocar.
