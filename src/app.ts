@@ -9,6 +9,7 @@ import { LoginRoute } from './routes/indexRoute';
 import { errorHandler } from './Middleware/errorHandler';
 import { registerRateLimit } from './Middleware/rateLimit';
 import { registerCors } from './Middleware/cors';
+import { registerDocs } from './docs';
 
 //instância global do Prisma Client(instância unica)
 //pooling
@@ -27,6 +28,7 @@ export function buildApp(){
     registerCors(server);
     server.register(cookie);
     registerRateLimit(server);
+    registerDocs(server);
     server.register(userRoutes);
     server.register(habitRoutes);
     server.register(checkinRoutes);

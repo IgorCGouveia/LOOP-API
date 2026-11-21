@@ -19,3 +19,4 @@ Formato de Michael Nygard. Cada arquivo registra uma decisão. Use o
 |---|---|---|
 | [0001](./0001-registrar-decisoes-com-adr.md) | Registrar decisões de arquitetura com ADR | Aceito |
 | [0002](./0002-timezone-do-usuario-apos-cadastro.md) | O timezone do usuário pode mudar depois do cadastro? | Aceito (opção A) |
+| [0003](./0003-documentacao-openapi.md) | Como manter a spec OpenAPI junto com o código? | Aceito (opção A) |

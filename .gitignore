@@ -9,5 +9,6 @@ node_modules
 !DECISIONS.md
 /docs/*
 !/docs/API-REFERENCE.md
+!/docs/openapi.yaml
 !/doc-2/**/*.md
 /coverage
