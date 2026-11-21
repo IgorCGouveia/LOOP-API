@@ -758,7 +758,7 @@ components:
       properties:
         id: { type: string }
         habitId: { type: string }
-        date: { type: string, format: date-time, description: Dia do check-in no fuso do usuário, gravado no momento da escrita., example: '2026-09-11T00:00:00.000Z' }
+        date: { type: string, format: date-time, description: 'Dia do check-in no fuso do usuário, gravado no momento da escrita.', example: '2026-09-11T00:00:00.000Z' }
         checkedAt: { type: string, format: date-time, description: Instante exato em UTC. }
         kind: { type: string, enum: [CHECKIN] }
         undoesId: { type: string, nullable: true }
