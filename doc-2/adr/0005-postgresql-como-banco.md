@@ -1,9 +1,9 @@
-# ADR-0010: PostgreSQL como banco de dados
+# ADR-0005: PostgreSQL como banco de dados
 
 - **Status:** Aceito (retroativo)
 - **Data:** 2026-11-20 (decisão original: 2026-05-20, primeira migration `20260520171428_tabela_usuario`)
 - **Decisor:** dono do projeto
-- **Relacionado:** [ADR-0009](./0009-prisma-como-orm.md), [modelo de domínio](../architecture/domain-model.md)
+- **Relacionado:** [ADR-0004](./0004-prisma-como-orm.md), [modelo de domínio](../architecture/domain-model.md)
 
 > **ADR retroativo.** O raciocínio da época não ficou registrado (ver
 > [ADR-0001](./0001-registrar-decisoes-com-adr.md)). Contexto reconstruído
@@ -28,8 +28,8 @@
   outra, `checkinRepository.ts:91`).
 - O CI sobe um Postgres como service e roda as migrations antes dos
   testes (`.github/workflows/ci.yml`). Os testes não usam mock de banco.
-- Em produção, o banco é um Postgres gerenciado (Render no `main`; Neon
-  no branch `IgorCGouveia/Deploy`, ainda não integrado).
+- Em produção, o banco é um Postgres gerenciado. Foi o do Render até o
+  #27 (`b19483c`), e desde então é o Neon.
 
 ## Opções consideradas
 
@@ -93,5 +93,5 @@ constraints `unique` compostas.
   como "dia" e nunca como instante (invariante I1 no
   [modelo de domínio](../architecture/domain-model.md)).
 - **A acompanhar:** os planos grátis têm limite de conexões. Em
-  serverless isso obriga a usar pooler (ADR-0005 no branch
-  `IgorCGouveia/Deploy`).
+  serverless isso obriga a usar pooler. Em produção a app usa a URL com
+  pooler do Neon e a migration usa a direta (`scripts/vercel-migrate.mjs`).

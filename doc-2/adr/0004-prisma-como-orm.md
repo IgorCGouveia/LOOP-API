@@ -1,9 +1,9 @@
-# ADR-0009: Prisma como ORM
+# ADR-0004: Prisma como ORM
 
 - **Status:** Aceito (retroativo)
 - **Data:** 2026-11-20 (decisão original: 2026-05-20, commit `68cb140`, com `prisma.config.ts` e a primeira migration)
 - **Decisor:** dono do projeto
-- **Relacionado:** [ADR-0010](./0010-postgresql-como-banco.md), [ADR-0008](./0008-fastify-como-framework-http.md)
+- **Relacionado:** [ADR-0005](./0005-postgresql-como-banco.md), [ADR-0003](./0003-fastify-como-framework-http.md)
 
 > **ADR retroativo.** O raciocínio da época não ficou registrado (ver
 > [ADR-0001](./0001-registrar-decisoes-com-adr.md)). Contexto reconstruído
@@ -88,15 +88,20 @@ depende dos códigos de erro do Prisma para o `409`.
 - **Mais difícil:** regras de concorrência. O check-in lê o último log e
   decide o que gravar, e o Prisma não tem `FOR UPDATE` na API. Hoje o que
   segura duplicidade é constraint de banco (`@unique`), não lock, e só
-  onde existe constraint (ver [ADR-0010](./0010-postgresql-como-banco.md),
+  onde existe constraint (ver [ADR-0005](./0005-postgresql-como-banco.md),
   *Consequências*).
 - **Mais difícil:** o build. `prisma generate` precisa rodar antes do
   `tsc`, e a pasta gerada é copiada à mão para `dist/`. Esquecer isso
   quebra o boot em produção.
 - **A acompanhar:** a instância única em `src/app.ts` é criada no import
-  do módulo. Em processo longo isso é o certo. Em serverless (branch
-  `IgorCGouveia/Deploy`, ADR-0005, ainda não integrado) cada instância da
-  função abre o próprio pool, e por isso aquele ADR usa a URL com pooler.
+  do módulo. Em processo longo isso é o certo. Em serverless (produção
+  na Vercel desde o #27) cada instância da função abre o próprio pool. Por
+  isso a `DATABASE_URL` de runtime aponta para o pooler do Neon, e a
+  migration usa a conexão direta (`scripts/vercel-migrate.mjs`).
+- **A acompanhar:** o deploy na Vercel exigiu
+  `binaryTargets = ["native", "rhel-openssl-3.0.x"]` no generator
+  (`prisma/schema.prisma:4`). É um custo do engine binário: cada ambiente
+  de execução novo pede o binário certo.
 - **A acompanhar:** o Prisma 6 tem o engine "classic" como padrão e está
   migrando para um client sem binário. Trocar de engine é uma mudança de
   build e merece ADR próprio quando vier.

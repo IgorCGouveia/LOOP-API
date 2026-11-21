@@ -1,9 +1,9 @@
-# ADR-0011: Autenticação com JWT curto e refresh token opaco em cookie
+# ADR-0006: Autenticação com JWT curto e refresh token opaco em cookie
 
 - **Status:** Aceito (retroativo)
 - **Data:** 2026-11-20 (decisões originais: login e JWT em 2026-07-03, commit `65571f8`; rate limit em 2026-09-10, `150ce62`; refresh token em 2026-09-12, migration `20260912222917_add_refresh_token`)
 - **Decisor:** dono do projeto
-- **Relacionado:** [ADR-0008](./0008-fastify-como-framework-http.md), [ADR-0012](./0012-desenho-das-rotas-usuarios-e-habitos.md), ADR-0006 e ADR-0007 no branch `IgorCGouveia/Deploy`
+- **Relacionado:** [ADR-0003](./0003-fastify-como-framework-http.md), [ADR-0007](./0007-desenho-das-rotas-usuarios-e-habitos.md)
 
 > **ADR retroativo.** Parte do raciocínio ficava no `DECISIONS.md`
 > removido; os comentários no código ainda apontam para ele
@@ -123,10 +123,13 @@ Motivos que o próprio código registra:
   consegue disparar `POST /logout` e encerrar a sessão do usuário.
 - **A acompanhar:** o `attemptTracker` guarda o estado em memória, numa
   instância só. Com várias instâncias (serverless), cada uma conta
-  sozinha. O ADR-0006 do branch `IgorCGouveia/Deploy` trata disso.
+  sozinha. Desde o #27 a produção é serverless na Vercel, então o atraso
+  progressivo por conta já vale só por instância. Corrigir isso (store
+  compartilhado, ou aceitar a limitação) é uma decisão à parte.
 - **A acompanhar:** com front e API em `*.vercel.app` diferentes, o cookie
-  vira de terceiros e o Safari bloqueia. O ADR-0007 do mesmo branch
-  resolve com rewrite no front.
+  vira de terceiros e o Safari bloqueia. O caminho discutido é um rewrite
+  no front, para o navegador só falar com o domínio dele. Isso depende do
+  repositório `loop-web` e ainda não tem ADR.
 - **A acompanhar:** `Auth.user` pega a segunda parte do header
   (`bearer.split(" ")[1]`, `Auth.ts:30`) sem conferir se o esquema é
   `Bearer`. Funciona, mas aceita qualquer prefixo.

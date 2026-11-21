@@ -1,9 +1,9 @@
-# ADR-0008: Fastify como framework HTTP
+# ADR-0003: Fastify como framework HTTP
 
 - **Status:** Aceito (retroativo)
 - **Data:** 2026-11-20 (decisão original: 2026-05-20, commit `68cb140`)
 - **Decisor:** dono do projeto
-- **Relacionado:** [ADR-0009](./0009-prisma-como-orm.md), [ADR-0011](./0011-autenticacao-jwt-e-refresh-em-cookie.md), [ADR-0012](./0012-desenho-das-rotas-usuarios-e-habitos.md)
+- **Relacionado:** [ADR-0004](./0004-prisma-como-orm.md), [ADR-0006](./0006-autenticacao-jwt-e-refresh-em-cookie.md), [ADR-0007](./0007-desenho-das-rotas-usuarios-e-habitos.md)
 
 > **ADR retroativo.** A decisão foi tomada no primeiro commit do projeto.
 > O raciocínio da época ficava no `DECISIONS.md`, que foi removido do
@@ -104,7 +104,8 @@ para auth, `config` por rota para rate limit e o logger com `reqId`.
   não com o `schema` de rota do Fastify. Por isso a API não tem
   serialização acelerada nem geração automática de OpenAPI. Mudar isso é
   uma decisão própria.
-- **A acompanhar:** o branch `IgorCGouveia/Deploy` (ADR-0003, ainda não
-  integrado ao `main`) leva a API para função serverless na Vercel. O
-  Fastify continua, mas o boot passa por um adapter e não pelo
-  `server.listen()`.
+- **A acompanhar:** desde o #27 (`b19483c`) a produção roda como função
+  serverless na Vercel. O Fastify continua, mas o boot em produção passa
+  por `api/index.ts`, que repassa o request para `app.server` sem chamar
+  `listen()`. O `src/server.ts` ficou para dev local e hosts com processo
+  longo. A escolha da Vercel ainda não tem ADR próprio.

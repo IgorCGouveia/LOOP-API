@@ -1,9 +1,9 @@
-# ADR-0012: Desenho das rotas de usuários, hábitos e check-ins
+# ADR-0007: Desenho das rotas de usuários, hábitos e check-ins
 
 - **Status:** Aceito (retroativo)
 - **Data:** 2026-11-20 (decisões originais: `GET /users/:userId/habits` em 2026-06-14, commit `3374974`; `/me/habits` e a regra dono/admin em 2026-07-03, `43a1351`; check-ins em 2026-08-26, `97056cd`; `PUT` trocado por `PATCH` em 2026-09-04, `6115d70`)
 - **Decisor:** dono do projeto
-- **Relacionado:** [ADR-0011](./0011-autenticacao-jwt-e-refresh-em-cookie.md), [ADR-0002](./0002-timezone-do-usuario-apos-cadastro.md)
+- **Relacionado:** [ADR-0006](./0006-autenticacao-jwt-e-refresh-em-cookie.md), [ADR-0002](./0002-timezone-do-usuario-apos-cadastro.md)
 
 > **ADR retroativo.** Contexto reconstruído a partir do código no commit
 > `b8700bb`. O pedido de documentação falava em "rotas aninhadas
