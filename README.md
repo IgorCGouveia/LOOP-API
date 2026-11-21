@@ -280,18 +280,23 @@ the database on [Neon](https://neon.tech) (serverless PostgreSQL).
 - **Build.** `npm run vercel-build` generates the Prisma client (with the
   `rhel-openssl-3.0.x` engine that Vercel's runtime needs), type-checks, and
   runs migrations.
-- **Migrations only in production.** [`scripts/vercel-migrate.mjs`](./scripts/vercel-migrate.mjs)
-  runs `prisma migrate deploy` only when `VERCEL_ENV=production`, so preview
-  deploys of branches and pull requests never change the schema. It uses the
-  direct Neon connection (`DIRECT_URL`), because the pooled one (PgBouncer in
-  transaction mode) doesn't support the advisory lock that Prisma Migrate takes.
+- **Separate databases for production and previews.** Production uses the
+  `production` branch on Neon. Preview deploys of branches and pull requests
+  use a `preview` branch that holds the same schema and no user data, so
+  nothing done on a preview URL touches real data.
+- **Migrations on every deploy.** [`scripts/vercel-migrate.mjs`](./scripts/vercel-migrate.mjs)
+  runs `prisma migrate deploy` for production and preview builds, each against
+  its own database, so a migration is exercised on a preview before it reaches
+  production. It uses the direct Neon connection (`DIRECT_URL`), because the
+  pooled one (PgBouncer in transaction mode) doesn't support the advisory lock
+  that Prisma Migrate takes.
 - **Deploys from Git.** Every push gets a preview URL; the production branch
   is deployed to https://loop-api-jade.vercel.app.
 
 | Variable on Vercel | Value |
 |---|---|
-| `DATABASE_URL` | Neon pooled connection (runtime) |
-| `DIRECT_URL` | Neon direct connection (migrations only) |
+| `DATABASE_URL` | Neon pooled connection (runtime). One value for production, another for preview. |
+| `DIRECT_URL` | Neon direct connection (migrations only). One value for production, another for preview. |
 | `SECRET_KEY` | JWT signing key |
 | `NODE_ENV` | `production` |
 | `CORS_ORIGIN` | URL of the `loop-web` client |
@@ -502,18 +507,23 @@ banco no [Neon](https://neon.tech) (PostgreSQL serverless).
 - **Build.** O `npm run vercel-build` gera o client do Prisma (com o engine
   `rhel-openssl-3.0.x`, exigido pelo runtime da Vercel), checa os tipos e roda
   as migrações.
-- **Migrações só em produção.** O [`scripts/vercel-migrate.mjs`](./scripts/vercel-migrate.mjs)
-  só roda `prisma migrate deploy` quando `VERCEL_ENV=production`, então o
-  deploy de preview de branches e PRs nunca altera o schema. Ele usa a conexão
-  direta do Neon (`DIRECT_URL`), porque a conexão com pooler (PgBouncer em modo
-  transação) não suporta o advisory lock que o Prisma Migrate usa.
+- **Bancos separados para produção e preview.** A produção usa a branch
+  `production` do Neon. Os deploys de preview de branches e PRs usam a branch
+  `preview`, que tem o mesmo schema e nenhum dado de usuário. Nada feito numa
+  URL de preview mexe nos dados reais.
+- **Migrações em todo deploy.** O [`scripts/vercel-migrate.mjs`](./scripts/vercel-migrate.mjs)
+  roda `prisma migrate deploy` nos builds de produção e de preview, cada um no
+  seu banco. Assim a migração é testada num preview antes de chegar em
+  produção. Ele usa a conexão direta do Neon (`DIRECT_URL`), porque a conexão
+  com pooler (PgBouncer em modo transação) não suporta o advisory lock que o
+  Prisma Migrate usa.
 - **Deploy pelo Git.** Todo push ganha uma URL de preview; a branch de produção
   vai para https://loop-api-jade.vercel.app.
 
 | Variável na Vercel | Valor |
 |---|---|
-| `DATABASE_URL` | Conexão do Neon com pooler (runtime) |
-| `DIRECT_URL` | Conexão direta do Neon (só migrações) |
+| `DATABASE_URL` | Conexão do Neon com pooler (runtime). Um valor para produção, outro para preview. |
+| `DIRECT_URL` | Conexão direta do Neon (só migrações). Um valor para produção, outro para preview. |
 | `SECRET_KEY` | Chave de assinatura do JWT |
 | `NODE_ENV` | `production` |
 | `CORS_ORIGIN` | URL do cliente `loop-web` |
