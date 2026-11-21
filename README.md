@@ -93,7 +93,7 @@ admins can manage everyone's.
 | Validation | Zod 4 (schemas also generate the TypeScript types) |
 | Auth | JWT access token (1h) + httpOnly refresh cookie (7d), Argon2id password hashing |
 | Rate limiting | `@fastify/rate-limit` per IP + a custom per-account delay tracker |
-| API docs | OpenAPI 3 + Swagger UI (`@fastify/swagger`, `@fastify/swagger-ui`) |
+| API docs | OpenAPI 3 spec served at `/docs/json` + Swagger UI at `/docs` |
 | Tests | Vitest, integration tests through `app.inject()` against a real Postgres |
 | CI | GitHub Actions: Postgres service, type check, migrations, test suite |
 | Hosting | Vercel (serverless Function) + Neon (serverless PostgreSQL) |
@@ -364,7 +364,7 @@ dados; o admin gerencia os de todos.
 | Validação | Zod 4 (os schemas também geram os tipos) |
 | Auth | Access token JWT (1h) + cookie httpOnly de refresh (7 dias), senha com Argon2id |
 | Rate limiting | `@fastify/rate-limit` por IP + rastreador de atraso por conta feito à mão |
-| Doc da API | OpenAPI 3 + Swagger UI (`@fastify/swagger`, `@fastify/swagger-ui`) |
+| Doc da API | Spec OpenAPI 3 em `/docs/json` + Swagger UI em `/docs` |
 | Testes | Vitest, testes de integração via `app.inject()` contra um Postgres real |
 | CI | GitHub Actions: Postgres de serviço, checagem de tipos, migrações, testes |
 | Hospedagem | Vercel (Function serverless) + Neon (PostgreSQL serverless) |

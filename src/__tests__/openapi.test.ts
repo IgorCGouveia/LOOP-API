@@ -62,7 +62,7 @@ describe("documentação OpenAPI", () => {
         const spec = await fetchSpec();
         expect(spec.openapi).toMatch(/^3\./);
 
-        const ui = await app.inject({ method: "GET", url: `${DOCS_PREFIX}/` });
+        const ui = await app.inject({ method: "GET", url: DOCS_PREFIX });
         expect(ui.statusCode).toBe(200);
         expect(ui.headers["content-type"]).toContain("text/html");
     });

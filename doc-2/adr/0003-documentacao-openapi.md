@@ -26,8 +26,8 @@ Fatos do código, conferidos no commit `b8700bb`:
 
 ### Opção A: spec estática em YAML, conferida por teste
 
-- `docs/openapi.yaml` escrito à mão, servido por `@fastify/swagger` em modo
-  `static` e `@fastify/swagger-ui` em `/docs` (`src/docs.ts`).
+- `docs/openapi.yaml` escrito à mão, servido pelo próprio app em `/docs`
+  (Swagger UI) e `/docs/json` (`src/docs.ts`).
 - `src/__tests__/openapi.test.ts` lista as rotas registradas no Fastify e
   falha se alguma não estiver na spec, ou se a spec tiver rota que não existe.
 - Muda no contrato da API: duas rotas novas, `GET /docs` e `GET /docs/json`.
@@ -61,8 +61,7 @@ Fatos do código, conferidos no commit `b8700bb`:
 Opção A, aceita pelo dono do projeto em 2026-11-20.
 
 A spec fica em `docs/openapi.yaml`, escrita à mão, e é servida em `/docs`
-(Swagger UI) e `/docs/json` por `@fastify/swagger` em modo `static` e
-`@fastify/swagger-ui` (`src/docs.ts`). O teste
+(Swagger UI) e `/docs/json` por duas rotas em `src/docs.ts`. O teste
 `src/__tests__/openapi.test.ts` falha se uma rota registrada não estiver na
 spec ou se a spec tiver rota que não existe.
 
@@ -88,7 +87,14 @@ Com a opção A:
   o objeto para o plugin, em vez de passar só o caminho. Se esse trecho for
   reescrito sem o padrão `path.join(__dirname, ...)`, o YAML pode ficar fora
   do pacote e `/docs` quebra só em produção. O trace local confirmou que o
-  YAML e os arquivos estáticos do Swagger UI entram no pacote.
+  YAML entra no pacote.
+- O Swagger UI não vem do plugin `@fastify/swagger-ui`. Ele depende de
+  `@fastify/static`, que faz `require()` de um pacote ESM puro
+  (`content-disposition@3`). O runtime da Vercel recusa isso, e a Function
+  inteira falhou no preview (`ERR_REQUIRE_ESM`). A página em `/docs` carrega
+  `swagger-ui-dist` do jsDelivr com versão fixa e hash SRI. Atualizar a
+  versão exige recalcular os hashes (instruções em `src/docs.ts`). A
+  conferência das rotas, que é o que esta decisão aceita, não mudou.
 - `docs/API-REFERENCE.md` continua como guia para quem constrói um cliente
   (fluxo de refresh, CORS, onde guardar o token). A referência campo a
   campo passa a ser a spec.
