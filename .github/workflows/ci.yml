@@ -3,8 +3,9 @@ name: CI
 on:
   push:
     branches: [LOOP-v2, main]
+  # qualquer base, não só main: PR empilhada (base = branch de outra PR)
+  # também precisa de CI antes de ser integrada.
   pull_request:
-    branches: [main]
 
 jobs:
   test:

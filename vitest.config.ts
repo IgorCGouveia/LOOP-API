@@ -30,10 +30,10 @@ export default defineConfig({
             // doc-2/architecture/testing-strategy.md, "Cobertura").
             // Os arquivos de segurança e integridade têm piso próprio.
             thresholds: {
-                lines: 95,
-                statements: 94,
-                branches: 87,
-                functions: 91,
+                lines: 96,
+                statements: 95,
+                branches: 88,
+                functions: 92,
                 "src/Middleware/Auth.ts": { lines: 100, branches: 100 },
                 "src/Middleware/habitAccess.ts": { lines: 100, branches: 80 },
                 "src/Middleware/errorHandler.ts": { lines: 100, branches: 80 },
