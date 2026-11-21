@@ -35,6 +35,10 @@ Formato de Michael Nygard. Cada arquivo registra uma decisão. Use o
 | [0013](./0013-como-a-api-descobre-o-ip-do-cliente.md) | Como a API descobre o IP do cliente | Proposto |
 | [0014](./0014-reautenticacao-para-trocar-senha-ou-email.md) | O que exigir para trocar senha ou email | Proposto |
 | [0015](./0015-limites-para-rotas-autenticadas.md) | Limites de uso e paginação nas rotas autenticadas | Proposto |
+| [0016](./0016-formato-de-erro.md) | Qual o formato do corpo de erro da API? | Proposto |
+| [0017](./0017-paginacao.md) | Como paginar as listagens? | Proposto |
+| [0018](./0018-custo-do-calculo-de-streak.md) | Como limitar o custo do cálculo de streak por check-in? | Proposto |
+| [0019](./0019-runtime-de-deploy.md) | A API continua como função serverless na Vercel ou passa para container? | Proposto |
 
 ## ADRs retroativos
 

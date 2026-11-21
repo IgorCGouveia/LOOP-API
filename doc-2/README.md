@@ -24,6 +24,7 @@ A estrutura segue dois padrões comuns no mercado:
 | [`architecture/`](./architecture/) | Explicação | Visão geral, camadas, modelo de domínio e as regras de negócio que não aparecem nos tipos |
 | [`adr/`](./adr/) | Decisões | Um arquivo por decisão: contexto, opções, escolha, consequências |
 | [`guides/`](./guides/) | Guia | Passo a passo de tarefas manuais (backfill, auditoria de dados) |
+| [`proposals/`](./proposals/) | Proposta | Revisões e planos ainda não implementados. Viram código ou ADR quando aprovados |
 | [`investigations/`](./investigations/) | Análise | Investigação de um problema concreto (geralmente uma issue): o que acontece, por quê, como reproduzir |
 | [`reference/`](./reference/) | Referência | Contrato HTTP e configuração |
 | [`glossary.md`](./glossary.md) | Referência | Termos do domínio (dia local, dia-alvo, grace fill...) |
@@ -37,6 +38,9 @@ A estrutura segue dois padrões comuns no mercado:
 - [Registro de decisões (ADRs)](./adr/README.md)
 - Guias
   - [Backfill de agenda e auditoria de dados](./guides/backfill-habit-schedule.md)
+- Propostas
+  - [Revisão de design (2026-11-20)](./proposals/design-review-2026-11-20.md): modelo de dados, rotas, escala
+  - [Plano de conteinerização com Docker](./proposals/containerizacao-docker.md)
 - Investigações
   - [Issue #15: PATCH /users deixa trocar o timezone](./investigations/issue-15-timezone-patch.md)
   - [Auditoria da suíte de testes (2026-11-20)](./investigations/2026-11-20-auditoria-de-testes.md)
