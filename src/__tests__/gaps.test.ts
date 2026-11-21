@@ -1,19 +1,19 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
-import jwt from "jsonwebtoken";
 import type { FastifyInstance } from "fastify";
 import { buildApp } from "../app";
 import { prisma } from "../db";
 import { attemptTracker } from "../services/attemptTracker";
+import { createAdmin, deleteUsers } from "./helpers/factories";
 
 describe("Gaps de cobertura fechados", () => {
     let app: FastifyInstance;
-    const secretKey = process.env.SECRET_KEY as string;
     const password = "senha12345";
 
     let userId: string | undefined;
     let userToken: string;
     let otherUserId: string | undefined;
     let otherUserToken: string;
+    let adminId: string | undefined;
     let adminToken: string;
 
     afterEach(() => attemptTracker.reset());
@@ -48,7 +48,10 @@ describe("Gaps de cobertura fechados", () => {
         otherUserId = otherUser.id;
         otherUserToken = otherUser.accessToken;
 
-        adminToken = jwt.sign({ id: "admin-gaps-test", role: "ADMIN" }, secretKey, { expiresIn: "1h" });
+        // admin gravado no banco, não um JWT com id inventado (ADR-0008)
+        const admin = await createAdmin({ prefix: "admin-gaps" });
+        adminId = admin.id;
+        adminToken = admin.token;
     });
 
     afterAll(async () => {
@@ -57,6 +60,7 @@ describe("Gaps de cobertura fechados", () => {
             await prisma.habit.deleteMany({ where: { userId: { in: remainingUserIds } } }).catch(() => {});
             await prisma.user.deleteMany({ where: { id: { in: remainingUserIds } } }).catch(() => {});
         }
+        await deleteUsers([adminId]);
         await app.close();
         await prisma.$disconnect();
     });

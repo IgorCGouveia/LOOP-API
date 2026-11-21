@@ -1,13 +1,12 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
-import jwt from "jsonwebtoken";
 import type { FastifyInstance } from "fastify";
 import { buildApp } from "../app";
 import { prisma } from "../db";
 import { attemptTracker } from "../services/attemptTracker";
+import { createAdmin, deleteUsers } from "./helpers/factories";
 
 describe("Ownership (dono vs. não-dono vs. admin)", () => {
     let app: FastifyInstance;
-    const secretKey = process.env.SECRET_KEY as string;
     const password = "senha12345";
 
     let ownerId: string | undefined;
@@ -15,6 +14,7 @@ describe("Ownership (dono vs. não-dono vs. admin)", () => {
     let ownerToken: string;
     let otherId: string | undefined;
     let otherToken: string;
+    let adminId: string | undefined;
     let adminToken: string;
 
     afterEach(() => attemptTracker.reset());
@@ -53,10 +53,12 @@ describe("Ownership (dono vs. não-dono vs. admin)", () => {
         otherId = other.id;
         otherToken = other.accessToken;
 
-        // Sem endpoint pra promover usuário a admin, então forjamos o JWT
-        // direto (o middleware Auth.user só verifica a assinatura, não
-        // confere se esse "admin" existe de verdade no banco).
-        adminToken = jwt.sign({ id: "admin-ownership-test", role: "ADMIN" }, secretKey, { expiresIn: "1h" });
+        // Sem endpoint pra promover usuário a admin: o admin é gravado
+        // direto no banco. Um JWT com id inventado esconderia os bugs de
+        // "usuário do token não existe" (ADR-0008).
+        const admin = await createAdmin({ prefix: "admin-ownership" });
+        adminId = admin.id;
+        adminToken = admin.token;
 
         const habit1 = await app.inject({
             method: "POST",
@@ -81,6 +83,7 @@ describe("Ownership (dono vs. não-dono vs. admin)", () => {
             await prisma.habit.deleteMany({ where: { userId: { in: remainingUserIds } } }).catch(() => {});
             await prisma.user.deleteMany({ where: { id: { in: remainingUserIds } } }).catch(() => {});
         }
+        await deleteUsers([adminId]);
         await app.close();
         await prisma.$disconnect();
     });
