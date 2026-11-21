@@ -1,9 +1,9 @@
-# ADR-0013: Qual o formato do corpo de erro da API?
+# ADR-0016: Qual o formato do corpo de erro da API?
 
 - **Status:** Proposto
 - **Data:** 2026-11-20
 - **Decisor:** dono do projeto
-- **Relacionado:** [revisão de design](../proposals/design-review-2026-11-20.md#42-problemas), [ADR-0014](./0014-paginacao.md)
+- **Relacionado:** [revisão de design](../proposals/design-review-2026-11-20.md#42-problemas), [ADR-0017](./0017-paginacao.md)
 
 ## Contexto
 

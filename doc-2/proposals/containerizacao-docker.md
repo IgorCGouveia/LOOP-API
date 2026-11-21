@@ -17,7 +17,7 @@
    o PR #27. A mesma imagem de runtime roda em qualquer lugar que aceite
    container (Render com Docker, Fly.io, Railway, Cloud Run, uma VM).
    Mudar ou não está em aberto no
-   [ADR-0016](../adr/0016-runtime-de-deploy.md). Os itens 1 e 2 valem em
+   [ADR-0019](../adr/0019-runtime-de-deploy.md). Os itens 1 e 2 valem em
    qualquer resposta.
 
 ## Arquivos

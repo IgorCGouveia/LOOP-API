@@ -1,4 +1,4 @@
-# ADR-0015: Como limitar o custo do cálculo de streak por check-in?
+# ADR-0018: Como limitar o custo do cálculo de streak por check-in?
 
 - **Status:** Proposto
 - **Data:** 2026-11-20 (contexto revisto em 2026-11-21, depois do PR #26)

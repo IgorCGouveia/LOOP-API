@@ -32,10 +32,10 @@ Formato de Michael Nygard. Cada arquivo registra uma decisão. Use o
 | [0010](./0010-desfazer-check-in-devolve-grace-token.md) | O que acontece com o grace fill quando o check-in que o criou é desfeito? | Aceito (opção A) |
 | [0011](./0011-politica-de-acesso-ao-habito.md) | Admin pode agir nos check-ins de outra pessoa? | Aceito (opção A) |
 | [0012](./0012-sessao-de-usuario-apagado.md) | O que um accessToken de conta apagada pode fazer? | Proposto |
-| [0013](./0013-formato-de-erro.md) | Qual o formato do corpo de erro da API? | Proposto |
-| [0014](./0014-paginacao.md) | Como paginar as listagens? | Proposto |
-| [0015](./0015-custo-do-calculo-de-streak.md) | Como limitar o custo do cálculo de streak por check-in? | Proposto |
-| [0016](./0016-runtime-de-deploy.md) | A API continua como função serverless na Vercel ou passa para container? | Proposto |
+| [0016](./0016-formato-de-erro.md) | Qual o formato do corpo de erro da API? | Proposto |
+| [0017](./0017-paginacao.md) | Como paginar as listagens? | Proposto |
+| [0018](./0018-custo-do-calculo-de-streak.md) | Como limitar o custo do cálculo de streak por check-in? | Proposto |
+| [0019](./0019-runtime-de-deploy.md) | A API continua como função serverless na Vercel ou passa para container? | Proposto |
 
 ## ADRs retroativos
 

@@ -1,9 +1,15 @@
-# ADR-0014: Como paginar as listagens?
+# ADR-0017: Como paginar as listagens?
 
 - **Status:** Proposto
 - **Data:** 2026-11-20
 - **Decisor:** dono do projeto
-- **Relacionado:** [revisão de design](../proposals/design-review-2026-11-20.md#42-problemas), ADR-0013
+- **Relacionado:** [revisão de design](../proposals/design-review-2026-11-20.md#42-problemas), ADR-0016
+
+> **Decidir junto com o [ADR-0015](./0015-limites-para-rotas-autenticadas.md)
+> (limites de uso e paginação nas rotas autenticadas).** O ADR-0015 veio da
+> auditoria de segurança e também propõe paginação (opção B, por cursor). Os
+> dois foram escritos em paralelo e precisam ser decididos juntos, para não
+> aceitar duas regras de paginação diferentes.
 
 ## Contexto
 

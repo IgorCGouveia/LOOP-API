@@ -1,4 +1,4 @@
-# ADR-0016: A API continua como função serverless na Vercel ou passa para container?
+# ADR-0019: A API continua como função serverless na Vercel ou passa para container?
 
 - **Status:** Proposto
 - **Data:** 2026-11-20 (contexto revisto em 2026-11-21, depois do PR #27)

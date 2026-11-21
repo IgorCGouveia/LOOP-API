@@ -7,7 +7,7 @@
 > `b8700bb`. As referências de arquivo e linha apontam para o `e49d0ef`.
 
 Este documento é uma proposta. Nada aqui muda código. As escolhas que
-têm trade-off real viraram ADRs com status `Proposto` (0013 a 0016) e
+têm trade-off real viraram ADRs com status `Proposto` (0016 a 0019) e
 esperam decisão do dono do projeto. O número de um ADR segue a ordem em
 que ele entra na `main`. Se outro ADR entrar antes, estes mudam de
 número.
@@ -20,7 +20,7 @@ número.
 | S3: todo `P2002` virava "Email já cadastrado." | Corrigido no PR #26 (issue #18). A mensagem depende da constraint. `P2025` virou `404`. |
 | C1 e D5: check-in e undo sem transação | Corrigido no PR #26. Transação por caso de uso com `SELECT ... FOR UPDATE` no `Habit`, [ADR-0009](../adr/0009-unidade-de-trabalho-por-caso-de-uso.md) (`Proposto`, opção A implementada). A ADR que esta revisão propunha para isso foi retirada por ser a mesma pergunta. |
 | R6: admin fazia check-in no hábito alheio, mas não editava | Corrigido no PR #26. Só o dono age nas rotas do hábito (`requireHabitAccess`), [ADR-0011](../adr/0011-politica-de-acesso-ao-habito.md) (`Proposto`, opção A implementada). |
-| Hospedagem | A API saiu do Render e roda na Vercel desde o PR #27, sem ADR. Ver [ADR-0016](../adr/0016-runtime-de-deploy.md). |
+| Hospedagem | A API saiu do Render e roda na Vercel desde o PR #27, sem ADR. Ver [ADR-0019](../adr/0019-runtime-de-deploy.md). |
 | D8: `dotenv` sem declaração no `package.json` | Corrigido no PR #33. |
 | Referência HTTP | Spec OpenAPI escrita à mão e servida em `/docs` (PR #30, [ADR-0008](../adr/0008-documentacao-openapi.md)). |
 
@@ -145,7 +145,7 @@ Pode ser um cron do provedor ou um comando `node dist/jobs/cleanup.js`
 no mesmo container.
 
 A mudança de modelo que depende de decisão (colunas materializadas de
-streak) está no [ADR-0015](../adr/0015-custo-do-calculo-de-streak.md).
+streak) está no [ADR-0018](../adr/0018-custo-do-calculo-de-streak.md).
 
 ## 4. Rotas REST
 
@@ -219,16 +219,16 @@ O cliente não tem um código estável para decidir o que fazer. Ele só
 tem a frase em português, que muda quando alguém revisa o texto. Os
 `details` misturam chave em português (`campo`) com chave em inglês
 (`message`). As opções estão no
-[ADR-0013](../adr/0013-formato-de-erro.md).
+[ADR-0016](../adr/0016-formato-de-erro.md).
 
 **Paginação**
 
 Nenhuma listagem é paginada. As que crescem sem limite são as de
 check-ins (todo o histórico) e as de admin (todos os usuários, todos os
 hábitos). As opções estão no
-[ADR-0014](../adr/0014-paginacao.md).
+[ADR-0017](../adr/0017-paginacao.md).
 
-### 4.3 Contrato-alvo (depende dos ADRs 0013, 0014 e 0016)
+### 4.3 Contrato-alvo (depende dos ADRs 0016, 0017 e 0019)
 
 Esboço para discussão. Ele mostra a forma, e os detalhes seguem as
 escolhas dos ADRs.
@@ -304,8 +304,8 @@ O que muda e por quê:
   mas cada check-in passa a custar milissegundos de banco e de CPU
   proporcionais ao histórico inteiro. Desde o PR #26 isso acontece com
   a trava do hábito e uma conexão do pool presas.
-  As opções estão no [ADR-0015](../adr/0015-custo-do-calculo-de-streak.md).
-- **C4. Listagens sem limite.** Ver ADR-0014.
+  As opções estão no [ADR-0018](../adr/0018-custo-do-calculo-de-streak.md).
+- **C4. Listagens sem limite.** Ver ADR-0017.
 - **C5. Índices.** Ver D1 e D3.
 
 ### 5.3 Rodar mais de uma instância
@@ -319,7 +319,7 @@ O que muda e por quê:
   `@fastify/rate-limit` aceita `redis` como store, e o tracker precisa
   de uma implementação com `INCR` e `PEXPIRE`. Na Vercel, um Redis
   gerenciado por HTTP (ex.: Upstash) evita abrir conexão TCP por
-  invocação. A [ADR-0016](../adr/0016-runtime-de-deploy.md) trata do
+  invocação. A [ADR-0019](../adr/0019-runtime-de-deploy.md) trata do
   runtime.
 - **C7. Conexões com o banco.** Cada instância abre um pool do Prisma
   (padrão: `num_cpus * 2 + 1`). Na Vercel, a `DATABASE_URL` de runtime
@@ -378,9 +378,9 @@ Precisam de aprovação de migration:
 
 Precisam de decisão nos ADRs:
 
-6. [ADR-0013](../adr/0013-formato-de-erro.md) formato de erro e
-   [ADR-0014](../adr/0014-paginacao.md) paginação, juntos com o `/v1`.
-7. [ADR-0015](../adr/0015-custo-do-calculo-de-streak.md) custo do streak.
-8. [ADR-0016](../adr/0016-runtime-de-deploy.md) manter a Vercel ou ir para container.
+6. [ADR-0016](../adr/0016-formato-de-erro.md) formato de erro e
+   [ADR-0017](../adr/0017-paginacao.md) paginação, juntos com o `/v1`.
+7. [ADR-0018](../adr/0018-custo-do-calculo-de-streak.md) custo do streak.
+8. [ADR-0019](../adr/0019-runtime-de-deploy.md) manter a Vercel ou ir para container.
 9. As ADRs 0009 e 0011 da `main` estão `Proposto` com a opção A já
    implementada. Falta só aceitar ou trocar.
