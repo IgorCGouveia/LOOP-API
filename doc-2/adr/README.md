@@ -28,10 +28,13 @@ Formato de Michael Nygard. Cada arquivo registra uma decisão. Use o
 | [0006](./0006-autenticacao-jwt-e-refresh-em-cookie.md) | Autenticação com JWT curto e refresh token opaco em cookie | Aceito (retroativo) |
 | [0007](./0007-desenho-das-rotas-usuarios-e-habitos.md) | Desenho das rotas de usuários, hábitos e check-ins | Aceito (retroativo) |
 | [0008](./0008-documentacao-openapi.md) | Como manter a spec OpenAPI junto com o código? | Aceito (opção A) |
-| [0009](./0009-unidade-de-trabalho-por-caso-de-uso.md) | Como garantir que cada caso de uso grave tudo ou nada? | Proposto (recomendação A implementada) |
-| [0010](./0010-desfazer-check-in-devolve-grace-token.md) | O que acontece com o grace fill quando o check-in que o criou é desfeito? | Proposto (recomendação A implementada) |
-| [0011](./0011-politica-de-acesso-ao-habito.md) | Admin pode agir nos check-ins de outra pessoa? | Proposto (recomendação A implementada) |
+| [0009](./0009-unidade-de-trabalho-por-caso-de-uso.md) | Como garantir que cada caso de uso grave tudo ou nada? | Aceito (opção A) |
+| [0010](./0010-desfazer-check-in-devolve-grace-token.md) | O que acontece com o grace fill quando o check-in que o criou é desfeito? | Aceito (opção A) |
+| [0011](./0011-politica-de-acesso-ao-habito.md) | Admin pode agir nos check-ins de outra pessoa? | Aceito (opção A) |
 | [0012](./0012-sessao-de-usuario-apagado.md) | O que um accessToken de conta apagada pode fazer? | Proposto |
+| [0013](./0013-como-a-api-descobre-o-ip-do-cliente.md) | Como a API descobre o IP do cliente | Proposto |
+| [0014](./0014-reautenticacao-para-trocar-senha-ou-email.md) | O que exigir para trocar senha ou email | Proposto |
+| [0015](./0015-limites-para-rotas-autenticadas.md) | Limites de uso e paginação nas rotas autenticadas | Proposto |
 
 ## ADRs retroativos
 

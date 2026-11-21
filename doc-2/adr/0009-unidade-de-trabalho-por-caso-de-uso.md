@@ -1,6 +1,6 @@
 # ADR-0009: Como garantir que cada caso de uso grave tudo ou nada?
 
-- **Status:** Proposto
+- **Status:** Aceito (opção A)
 - **Data:** 2026-11-20
 - **Decisor:** dono do projeto
 - **Relacionado:** issues #16, #19, #20, #18; commit `d260fa6`
@@ -58,7 +58,7 @@ repositório.
   precisaria de retry no service. É mais caro e mais difícil de testar
   do que uma trava explícita numa linha.
 
-## Recomendação (implementada neste PR)
+## Recomendação
 
 Opção A. A trava fica numa linha só (o hábito), dura o tempo de um
 check-in, e resolve a corrida do #18 sem retry. O teste de fronteira
@@ -71,15 +71,22 @@ adicionar retry em `P2034`.
 
 ## Decisão
 
-<Preencher quando o status for Aceito.>
+Opção A, aceita pelo dono do projeto em 2026-11-21.
+
+Cada caso de uso que grava mais de uma linha (criar e editar hábito,
+check-in, undo) roda em `prisma.$transaction` no service, e as funções do
+repositório recebem o `tx` no último parâmetro. Check-in e undo travam a
+linha do hábito com `SELECT ... FOR UPDATE` antes de ler, então
+requisições paralelas no mesmo hábito entram em fila.
 
 ## Consequências
 
 - `src/__tests__/transactions.test.ts` injeta uma falha no meio de cada
-  caso de uso e confere que nada ficou gravado. `conflicts.test.ts`
-  dispara dois check-ins paralelos.
-- Ficar de olho no tamanho do pool de conexões no Render: cada check-in
-  segura uma conexão até terminar.
+  caso de uso e confere que nada ficou gravado.
+  `src/__tests__/concurrency.test.ts` segura dois check-ins paralelos
+  numa barreira e mostra a corrida sem a trava e a fila com ela.
+- Ficar de olho no pool de conexões do Neon: cada check-in segura uma
+  conexão até terminar.
 - Dados gravados antes disso podem ter sobras de escritas parciais.
   `npm run audit:integrity` lista o que existe (ver o
   [roteiro](../guides/backfill-habit-schedule.md)).
