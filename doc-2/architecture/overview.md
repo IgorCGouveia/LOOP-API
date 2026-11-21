@@ -28,8 +28,10 @@ repositories/  acesso ao banco para HabitLog, GraceFill e HabitSchedule
   │
 src/db.ts      PrismaClient, instância única
 
-src/domain/    regras puras de agenda (isTargetDay, targetDaysBetween,
-               isCompleted), sem import de banco
+src/domain/    regras puras, sem import de banco: agenda em schedule.ts
+               (isTargetDay, targetDaysBetween, isCompleted), streak e
+               grace token em streak.ts (computeTailStreak,
+               recalculateLongestStreak, replenishedGraceBalance)
 ```
 
 `src/app.ts` é só a raiz HTTP e só `src/server.ts` importa dele
@@ -85,7 +87,8 @@ de ler, então requisições paralelas no mesmo hábito entram em fila. Ver
 - CI (`.github/workflows/ci.yml`): `prisma generate`, depois
   `tsc --noEmit` como checagem de tipos, depois `prisma migrate deploy`,
   depois `npm run test:coverage`, que falha se a cobertura ficar abaixo
-  dos pisos de `vitest.config.ts`.
+  dos pisos de `vitest.config.ts`. Roda em push para `main`/`LOOP-v2` e
+  em PR para qualquer base (inclusive PR empilhada sobre outra PR).
 - Pirâmide, matriz de risco, pisos de cobertura e regras para escrever
   um teste novo: [testing-strategy.md](./testing-strategy.md).
 

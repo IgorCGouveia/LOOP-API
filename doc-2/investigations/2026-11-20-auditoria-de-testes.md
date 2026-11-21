@@ -128,9 +128,9 @@ que o id existe.
 ### Testes que escondiam bugs
 
 - **Admin com id inventado.** `gaps.test.ts` e `ownership.test.ts`
-  assinam um token `{ id: "admin-gaps-test", role: "ADMIN" }` sem usuário
-  no banco. Se esse admin chamasse `POST /habits`, receberia o `500` do
-  bug 6. Os testes novos usam `createAdmin()`
+  assinavam um token `{ id: "admin-gaps-test", role: "ADMIN" }` sem
+  usuário no banco. Se esse admin chamasse `POST /habits`, receberia o
+  `500` do bug 6. Os dois arquivos passaram a usar `createAdmin()`
   (`src/__tests__/helpers/factories.ts`), que grava um admin de verdade.
 - **Ordem entre testes.** `ownership.test.ts` apaga `otherId` no meio do
   arquivo, e os testes seguintes dependem disso. Rodar um teste isolado

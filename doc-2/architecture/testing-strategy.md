@@ -30,7 +30,7 @@ README da raiz, seção "Testes".
 
 | Camada | Onde | Velocidade | O que cobre |
 |---|---|---|---|
-| Unitário | `scheduleLogic.test.ts`, `date.test.ts`, `schemas.test.ts`, `secretKey.test.ts`, `attemptTracker.test.ts` | ms, sem banco | Regras puras: dia-alvo, dia local, limites dos schemas, guard da chave, rate limit por conta |
+| Unitário | `scheduleLogic.test.ts`, `streak.test.ts`, `date.test.ts`, `schemas.test.ts`, `secretKey.test.ts`, `attemptTracker.test.ts` | ms, sem banco | Regras puras: dia-alvo, streak, reposição de grace token, dia local, limites dos schemas, guard da chave, rate limit por conta |
 | Arquitetura | `checkinRepositoryBoundary.test.ts`, `layering.test.ts` | ms | Quem pode importar o quê. Leem o código-fonte, não executam |
 | Repositório e service | `pathA.test.ts`, `backfill.test.ts`, `transactions.test.ts` | dezenas de ms | Estado que a API não cria sozinha, falha no meio de uma transação |
 | Integração HTTP | o restante | dezenas de ms | Contrato, autorização, fluxo completo |
@@ -77,8 +77,9 @@ teste novo até o ADR ser decidido.
 
 | Regra | Teste |
 |---|---|
+| Streak (cauda, recorde, empate, agenda semanal) | `streak.test.ts` |
 | Streak, grace token gasto e devolvido no undo, teto de 3 | `graceFillUndo.test.ts`, `timezoneFrozen.test.ts` |
-| Reposição mensal de grace token (meses UTC, virada de ano, teto) | `habitScheduleAndGrace.test.ts` |
+| Reposição mensal de grace token (meses UTC, virada de ano, teto) | `streak.test.ts`, `habitScheduleAndGrace.test.ts` |
 | Versionamento de schedule pelo PATCH, schedule inválido não cria versão | `habitScheduleAndGrace.test.ts`, `pathA.test.ts` |
 | Undo é evento compensatório, nunca DELETE | `checkinAccess.test.ts`, `pathA.test.ts` |
 | Tudo ou nada por caso de uso | `transactions.test.ts` |
@@ -95,6 +96,7 @@ teste novo até o ADR ser decidido.
 | JSON malformado 400, corpo grande 413, Content-Type 415 | `clientErrors.test.ts` |
 | P2002 por constraint, P2025 → 404 | `conflicts.test.ts` |
 | Rate limit por IP (`/users` 5/h, `/login` 20/min) e por conta | `rateLimit.test.ts`, `attemptTracker.test.ts` |
+| CORS: só origens da lista, nunca `*`, credentials, preflight de PATCH/DELETE | `cors.test.ts` |
 
 ## Como escrever um teste novo
 
@@ -130,14 +132,14 @@ teste novo até o ADR ser decidido.
 
 | Escopo | Linhas | Branches |
 |---|---|---|
-| Global | 95% | 87% |
+| Global | 96% | 88% |
 | `Middleware/Auth.ts` | 100% | 100% |
 | `Middleware/habitAccess.ts`, `Middleware/errorHandler.ts` | 100% | 80% |
 | `services/checkinServices.ts` | 90% | 80% |
 | `controllers/CheckinController.ts` | 90% | 85% |
 
-- **Piso, não meta.** O piso fica um pouco abaixo do valor medido (96,6%
-  das linhas e 88,9% dos branches em 2026-11-20) para não quebrar por
+- **Piso, não meta.** O piso fica um pouco abaixo do valor medido (97,2%
+  das linhas e 89,9% dos branches em 2026-11-21) para não quebrar por
   oscilação. Ele só sobe: quando um PR aumenta a cobertura de forma
   estável, o piso sobe junto.
 - Ficam fora da conta `src/generated/`, `src/server.ts` e os três pontos
@@ -151,9 +153,7 @@ teste novo até o ADR ser decidido.
 
 | Item | Por que importa | Caminho |
 |---|---|---|
-| `gaps.test.ts` e `ownership.test.ts` usam admin com id inventado | Esconde o bug do ADR-0008 | Migrar para `createAdmin()` |
 | `ownership.test.ts` depende da ordem dos testes | Rodar um teste isolado pode dar outro resultado | Cada teste cria o próprio usuário |
 | `createUserAndLogin` copiado em vários arquivos | Mudança no cadastro exige editar N arquivos | Migrar para as factories |
-| Streak (`computeTailStreak`, `recalculateLongestStreak`) só testado pelo HTTP | Teste de borda de streak é lento e indireto | Extrair para `src/domain/` como já foi feito com `schedule.ts` e testar unitário |
-| `cors.ts` e `cookies.ts` com o ramo de produção sem teste | Config errada só aparece em produção | Teste unitário com `NODE_ENV=production` |
+| `cookies.ts` com o ramo de produção sem teste | Config errada do cookie só aparece em produção | Teste com `NODE_ENV=production`. Ficou para depois porque a PR #25 (deploy) muda esse arquivo |
 | Admin nas rotas de check-in | Depende do ADR-0005 | Escrever os testes quando o ADR for decidido |
