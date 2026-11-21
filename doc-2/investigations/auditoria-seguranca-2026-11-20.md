@@ -10,8 +10,8 @@
   variáveis de ambiente, tratamento de erros, dependências e CI
 - **Produção:** Vercel (projeto `loop-api`, entrypoint `api/index.ts`),
   com o front (`loop-web`) fazendo rewrite de `/api/*` para a API
-- **Status:** M1, M4, L2 e L3 já corrigidos na `main`; H2 corrigido na
-  branch `IgorCGouveia/security-h1-h2`; os demais abertos. Decisões
+- **Status:** H2, M1, M4, L2 e L3 já corrigidos na `main`; os demais
+  abertos. Decisões
   abertas: [ADR-0013](../adr/0013-como-a-api-descobre-o-ip-do-cliente.md),
   [ADR-0014](../adr/0014-reautenticacao-para-trocar-senha-ou-email.md),
   [ADR-0015](../adr/0015-limites-para-rotas-autenticadas.md)
@@ -45,7 +45,7 @@ leitura do código e o mesmo teste com `app.inject` da seção
 | ID | Situação | Evidência em `e49d0ef` |
 |---|---|---|
 | H1 | Aberto, não explorável na Vercel | `src/app.ts:21` ainda tem `trustProxy: true`. Localmente, `X-Forwarded-For` forjado ainda vira `req.ip`. Decisão: [ADR-0013](../adr/0013-como-a-api-descobre-o-ip-do-cliente.md) |
-| H2 | Corrigido na branch `IgorCGouveia/security-h1-h2` | `fastify` 5.12.8, `zod` 4.6.7, `fast-uri` 3.1.9, `ip-address` 10.7.6. Sobram 4 advisories que dependem do `prisma` 7 |
+| H2 | **Corrigido** em `2e40295` (PR #31) | `fastify` 5.12.8, `zod` 4.6.7, `fast-uri` 3.1.9, `ip-address` 10.7.6. `npm audit --omit=dev` caiu de 8 para 4; as 4 restantes dependem do `prisma` 7 |
 | H3 | Aberto | `UserController.ts:45-52` e `userServices.ts:47-67` iguais. Decisão: [ADR-0014](../adr/0014-reautenticacao-para-trocar-senha-ou-email.md) |
 | M1 | **Corrigido** em `e49d0ef` (PR #28) | `errorHandler.ts:34-77` respeita o `statusCode` 4xx. Teste: JSON malformado responde 400, body grande 413, 21º `/login` 429 |
 | M2 | Aberto | `indexController.ts:14` sem schema. Teste: body ausente e `email: {}` ainda respondem 500 |
@@ -414,16 +414,14 @@ Conferido com o mesmo critério dos achados.
 
 ## Ordem de correção sugerida
 
-Atualizada em `e49d0ef`, já sem M1, M4, L2 e L3:
+Atualizada em `2e40295`, já sem H2, M1, M4, L2 e L3:
 
-1. **H2 (fastify e zod)**: só bump de versão. Branch
-   `IgorCGouveia/security-h1-h2`. Precisa entrar antes do H1.
-2. **M2**: schema do login. Pequeno, e é a rota mais exposta.
-3. **M5**: gates de segurança no CI. Impede que o H2 se repita.
-4. **H1**, depois que o ADR-0013 for decidido. Não é urgente na Vercel
+1. **M2**: schema do login. Pequeno, e é a rota mais exposta.
+2. **M5**: gates de segurança no CI. Impede que o H2 se repita.
+3. **H1**, depois que o ADR-0013 for decidido. Não é urgente na Vercel
    (ver a revisão no próprio achado), mas é uma linha.
-5. **H3**, depois que o ADR-0014 for decidido.
-6. **M3**, **M6** (depois do ADR-0015) e os LOW, na ordem que for mais
+4. **H3**, depois que o ADR-0014 for decidido.
+5. **M3**, **M6** (depois do ADR-0015) e os LOW, na ordem que for mais
    conveniente. O `prisma` 7 vai num PR separado.
 
 Cada PR cita o ID do achado no título ou na descrição, para dar para
