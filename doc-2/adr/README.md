@@ -22,3 +22,8 @@ Formato de Michael Nygard. Cada arquivo registra uma decisão. Use o
 | [0003](./0003-unidade-de-trabalho-por-caso-de-uso.md) | Como garantir que cada caso de uso grave tudo ou nada? | Proposto (recomendação A implementada) |
 | [0004](./0004-desfazer-check-in-devolve-grace-token.md) | O que acontece com o grace fill quando o check-in que o criou é desfeito? | Proposto (recomendação A implementada) |
 | [0005](./0005-politica-de-acesso-ao-habito.md) | Admin pode agir nos check-ins de outra pessoa? | Proposto (recomendação A implementada) |
+| [0008](./0008-sessao-de-usuario-apagado.md) | O que um accessToken de conta apagada pode fazer? | Proposto |
+
+Os números 0006 e 0007 estão em uso na PR #25 (deploy na Vercel), ainda
+não integrada. Aquela PR também usa 0003 a 0005 para outros temas, e os
+números precisam ser renumerados quando ela for integrada.

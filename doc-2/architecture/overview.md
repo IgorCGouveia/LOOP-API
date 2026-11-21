@@ -84,7 +84,10 @@ de ler, então requisições paralelas no mesmo hábito entram em fila. Ver
   (`concurrency.test.ts`).
 - CI (`.github/workflows/ci.yml`): `prisma generate`, depois
   `tsc --noEmit` como checagem de tipos, depois `prisma migrate deploy`,
-  depois `npm test`.
+  depois `npm run test:coverage`, que falha se a cobertura ficar abaixo
+  dos pisos de `vitest.config.ts`.
+- Pirâmide, matriz de risco, pisos de cobertura e regras para escrever
+  um teste novo: [testing-strategy.md](./testing-strategy.md).
 
 ## Tempo e timezone
 

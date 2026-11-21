@@ -19,6 +19,8 @@ Resolvidas:
 
 | Seção | Divergência | Resolução |
 |---|---|---|
+| "Formato de resposta", linha do `429` | A doc prometia `429` com `Retry-After`. O código respondia `500`, porque o objeto lançado pelo `@fastify/rate-limit` caía no ramo genérico do `errorHandler`. JSON malformado, `Content-Type` errado e corpo grande também viravam `500`, sem linha na doc. | [Auditoria de testes](../investigations/2026-11-20-auditoria-de-testes.md), bugs 2 e 3. O código passou a responder `429`, `400`, `415` e `413`, e a tabela ganhou as linhas que faltavam. |
+| `POST /users`, campo `timezone` | A doc dizia "identificador IANA válido". O código recusava `"UTC"`, que é o default da coluna. | Mesma auditoria. `"UTC"` passou a ser aceito, e a doc cita isso. |
 | `PATCH /users/:id` e "Fuso horário mostrado pro usuário" | A doc se contradizia: uma seção aceitava `timezone` no PATCH e outra dizia que ele não mudava. O código aceitava. | Issue #15, [ADR-0002](../adr/0002-timezone-do-usuario-apos-cadastro.md). O código passou a rejeitar, e as duas seções foram alinhadas. |
 
 ## Configuração (variáveis de ambiente)
