@@ -8,7 +8,7 @@ import { bearer, createUser, deleteUsers } from "./helpers/factories";
 // O que sobra da sessão depois que a conta é apagada.
 // O refresh token some por cascade (decidido). O accessToken continua
 // assinado e válido até expirar (1h), e o que cada rota faz com ele está
-// em aberto: ADR-0008, status Proposto. Os it.todo abaixo viram testes
+// em aberto: ADR-0012, status Proposto. Os it.todo abaixo viram testes
 // quando o ADR for decidido.
 describe("Sessão de um usuário apagado", () => {
     let app: FastifyInstance;
@@ -58,7 +58,7 @@ describe("Sessão de um usuário apagado", () => {
         expect(second.statusCode).toBe(404);
     });
 
-    // ADR-0008 (Proposto). Comportamento hoje, conferido em 2026-11-20:
+    // ADR-0012 (Proposto). Comportamento hoje, conferido em 2026-11-20:
     // POST /habits -> 500 (FK), GET /me/habits -> 200 { data: null }.
     it.todo("accessToken de conta apagada em POST /habits não responde 500");
     it.todo("accessToken de conta apagada em GET /me/habits não responde 200 com data null");

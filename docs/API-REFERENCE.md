@@ -36,15 +36,20 @@ integrar está aqui.
 - Deploy do cliente é infra separada da API (loja de app / build interno,
   ou hosting estático pro `loop-web`), decisão de quando chegar lá.
 
+> **Referência campo a campo:** a spec OpenAPI em [`openapi.yaml`](./openapi.yaml),
+> com Swagger UI em `/docs` no servidor. Este documento cobre o que a spec
+> não explica bem: contexto do cliente, CORS, fluxo de refresh e decisões
+> que ficam do lado do app.
+
 ## URLs
 
-- **Produção**: `https://loop-api-wz74.onrender.com`
+- **Produção**: `https://loop-api-jade.vercel.app` (Vercel; até 2026-11 era `loop-api-wz74.onrender.com`, que não responde mais)
 - **Local**: `http://localhost:3333` (ou a `PORT`/`HOST` que você setar)
 
-⚠️ **Free tier do Render**: o serviço dorme depois de um tempo sem uso. A
-primeira requisição depois disso leva **30-60s** pra responder (cold start).
-Um cliente decente precisa de timeout generoso e alguma indicação visual de
-"carregando" nessa primeira chamada — não é bug, é a infra grátis.
+A API roda como Function serverless na Vercel. A primeira requisição depois
+de um tempo parado pode demorar um pouco mais (cold start da Function e do
+banco no Neon), então vale um timeout generoso e um indicador de
+"carregando" na primeira chamada.
 
 ## CORS (configurado em 12/09/2026 — só relevante pro `loop-web`)
 
@@ -57,7 +62,7 @@ A origem vem da env var `CORS_ORIGIN` da API (lista separada por vírgula,
 ex.: `CORS_ORIGIN=https://loop-web.exemplo.com`) — sem ela, a API cai num
 default de desenvolvimento (`localhost:5173`/`localhost:3000`) e **não**
 libera nenhum domínio de produção. Se o `loop-web` for hospedado em outro
-domínio, isso precisa ser configurado no dashboard do Render da API antes
+domínio, isso precisa ser configurado nas variáveis de ambiente do projeto `loop-api` na Vercel antes
 do deploy do `loop-web` — trabalho no repo da API, não no repo do
 cliente.
 

@@ -54,7 +54,7 @@ entra, ela entra aqui também.
 | Esquema diferente de `Bearer`, token sem esquema, partes demais | 401 | `authEdgeCases.test.ts` |
 | `SECRET_KEY` ausente no runtime | 500 sem vazar detalhe | `gaps.test.ts`, `bugfixes.test.ts` |
 | Rota de admin com usuário comum / com token inválido | 403 / 401 | `auth.test.ts`, `authEdgeCases.test.ts` |
-| Token de conta apagada | **em aberto** (ADR-0008) | `deletedUserSession.test.ts` (`it.todo`) |
+| Token de conta apagada | **em aberto** (ADR-0012) | `deletedUserSession.test.ts` (`it.todo`) |
 | Cookie de refresh: sempre `httpOnly`; em produção `secure` + `sameSite: none`, fora dela `lax` | conforme o ambiente | `cookies.test.ts` |
 
 ### Autorização por recurso
@@ -66,12 +66,12 @@ entra, ela entra aqui também.
 | `GET /users` | — | 403 | 200 | — |
 | `GET /users/:userId/habits` | 200 | 403 | 200 | 404 |
 | `PATCH` / `DELETE /habits/:id` | 200 | 403 | 403 | 404 |
-| `POST` / `DELETE /habits/:habitId/checkin` | 201 / 200 | 403 | ADR-0005 | 404 |
-| `GET /habits/:habitId/checkins` | 200 | 403 | ADR-0005 | 404 |
+| `POST` / `DELETE /habits/:habitId/checkin` | 201 / 200 | 403 | ADR-0011 | 404 |
+| `GET /habits/:habitId/checkins` | 200 | 403 | ADR-0011 | 404 |
 | `GET /users/:userId/checkins` | 200 | 403 | 200 | 404 |
 
 Testes: `ownership.test.ts`, `adminUserRules.test.ts`,
-`checkinAccess.test.ts`, `gaps.test.ts`. As células "ADR-0005" ficam sem
+`checkinAccess.test.ts`, `gaps.test.ts`. As células "ADR-0011" ficam sem
 teste novo até o ADR ser decidido.
 
 ### Integridade de dados
@@ -156,4 +156,4 @@ teste novo até o ADR ser decidido.
 |---|---|---|
 | `ownership.test.ts` depende da ordem dos testes | Rodar um teste isolado pode dar outro resultado | Cada teste cria o próprio usuário |
 | `createUserAndLogin` copiado em vários arquivos | Mudança no cadastro exige editar N arquivos | Migrar para as factories |
-| Admin nas rotas de check-in | Depende do ADR-0005 | Escrever os testes quando o ADR for decidido |
+| Admin nas rotas de check-in | Depende do ADR-0011 | Escrever os testes quando o ADR for decidido |

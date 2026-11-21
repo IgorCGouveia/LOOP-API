@@ -30,7 +30,7 @@ jobs:
       DATABASE_URL: postgresql://ci:ci@localhost:5432/loop_test?schema=public
       # Valor de teste — não é segredo real (banco efêmero, token descartável).
       # Usa o secret do repo se existir; senão cai no literal (cobre PR de fork,
-      # que não enxerga secrets). Segredo de produção vive no dashboard do Render.
+      # que não enxerga secrets). Segredo de produção vive nas variáveis de ambiente da Vercel.
       SECRET_KEY: ${{ secrets.SECRET_KEY || 'ci-test-secret-nao-real-0123456789' }}
 
     steps:

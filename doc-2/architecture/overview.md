@@ -5,8 +5,9 @@
 ## Contexto
 
 O LOOP é uma API REST sem frontend. Quem consome é um cliente mobile
-(stack ainda não escolhida) e um cliente web (`loop-web`). A API roda no
-Render e usa um PostgreSQL gerenciado.
+(stack ainda não escolhida) e um cliente web (`loop-web`). A API roda na
+Vercel, como Function serverless (`api/index.ts`), e usa PostgreSQL no Neon.
+Até 2026-11 rodava no Render.
 
 ```
 [app mobile] ──┐
@@ -42,7 +43,7 @@ importar qualquer service carregava o app inteiro (issue #22).
   `auth.admin` também exige `role = ADMIN`.
 - `src/Middleware/habitAccess.ts`: `requireHabitAccess(action)` carrega
   o hábito da rota, aplica a política de acesso de cada ação (hoje, só o
-  dono, ver [ADR-0005](../adr/0005-politica-de-acesso-ao-habito.md)) e
+  dono, ver [ADR-0011](../adr/0011-politica-de-acesso-ao-habito.md)) e
   deixa o hábito em `req.habit`.
 - `src/Middleware/errorHandler.ts`: concentra o tratamento de erro.
   `ZodError` vira `400` com `details`. `P2002` do Prisma vira `409` com
@@ -64,7 +65,7 @@ Cada caso de uso que grava mais de uma linha roda em
 undo. As funções do repositório recebem o `tx` no último parâmetro.
 Check-in e undo travam a linha do hábito (`SELECT ... FOR UPDATE`) antes
 de ler, então requisições paralelas no mesmo hábito entram em fila. Ver
-[ADR-0003](../adr/0003-unidade-de-trabalho-por-caso-de-uso.md).
+[ADR-0009](../adr/0009-unidade-de-trabalho-por-caso-de-uso.md).
 
 ## Contrato HTTP
 

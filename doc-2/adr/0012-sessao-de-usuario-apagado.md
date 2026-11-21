@@ -1,4 +1,4 @@
-# ADR-0008: O que um accessToken de conta apagada pode fazer?
+# ADR-0012: O que um accessToken de conta apagada pode fazer?
 
 - **Status:** Proposto
 - **Data:** 2026-11-21

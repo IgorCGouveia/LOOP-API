@@ -26,7 +26,7 @@ async function replenishGraceTokens(habit: Habit, db: Db): Promise<number> {
     return balance;
 }
 
-// Check-in e undo são uma unidade de trabalho cada (issue #16, ADR-0003):
+// Check-in e undo são uma unidade de trabalho cada (issue #16, ADR-0009):
 // reposição de token, grace fill, débito do token, o evento no log e o
 // longestStreak entram no mesmo commit, ou nenhum entra. Um 500 passa a
 // significar "nada foi gravado", então o cliente pode repetir sem criar
@@ -63,7 +63,7 @@ export async function CreateCheckIn(habitId: string, ownerId: string) {
         const skippedTargetDays = lastDate ? targetDaysBetween(schedules, lastDate, today) : [];
 
         // o CHECKIN vem antes do fill pra o fill poder apontar pra ele —
-        // é esse vínculo que deixa o undo devolver o token (ADR-0004).
+        // é esse vínculo que deixa o undo devolver o token (ADR-0010).
         const checkin = await checkinRepository.insertLogEvent(habitId, today, 'CHECKIN', undefined, tx);
 
         if (skippedTargetDays.length === 1 && graceTokens > 0) {
@@ -132,7 +132,7 @@ export async function UndoCheckIn(habitId: string) {
         await checkinRepository.insertLogEvent(habitId, lastLog.date, 'UNDO', lastLog.id, tx);
 
         // se o CHECKIN desfeito gastou um token, o dia perdoado por ele sai
-        // do log efetivo e o token volta (ADR-0004). Sem isso, o próximo
+        // do log efetivo e o token volta (ADR-0010). Sem isso, o próximo
         // check-in enxerga só 1 dia pulado depois do fill órfão e perdoa
         // um gap de 2 dias-alvo com um 2º token (issue #21).
         const compensated = await checkinRepository.deleteGraceFillOfCheckIn(lastLog.id, tx);

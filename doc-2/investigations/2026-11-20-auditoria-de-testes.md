@@ -3,7 +3,7 @@
 - **Data:** 2026-11-20
 - **Conferido nos commits:** `b8700bb` (main) e `22699ae` (PR #26, base desta mudança)
 - **Estratégia resultante:** [testing-strategy.md](../architecture/testing-strategy.md)
-- **Decisão pendente:** [ADR-0008](../adr/0008-sessao-de-usuario-apagado.md) (Proposto)
+- **Decisão pendente:** [ADR-0012](../adr/0012-sessao-de-usuario-apagado.md) (Proposto)
 
 ## Resumo
 
@@ -14,7 +14,7 @@ leu cada arquivo de teste contra o código e reproduziu cada suspeita com
 um teste descartável antes de registrar aqui.
 
 Achados: seis bugs confirmados. Quatro foram corrigidos nesta mudança,
-um já estava corrigido na PR #26 e um depende de decisão (ADR-0008).
+um já estava corrigido na PR #26 e um depende de decisão (ADR-0012).
 
 ## Cobertura medida
 
@@ -105,7 +105,7 @@ rotas de check-in tinha teste.
   - `POST /habits` → `500` (violação de FK ao gravar o hábito);
   - `GET /me/habits` → `200 { "data": null }`.
 - **Status:** aberto. A correção muda o contrato e tem trade-off de
-  desempenho, então virou o [ADR-0008](../adr/0008-sessao-de-usuario-apagado.md).
+  desempenho, então virou o [ADR-0012](../adr/0012-sessao-de-usuario-apagado.md).
   Os testes esperados estão como `it.todo` em `deletedUserSession.test.ts`.
 
 ## Outros achados
@@ -141,5 +141,5 @@ que o id existe.
 
 `PATCH /users/:id` com senha nova não revoga os refresh tokens nem
 invalida o `accessToken` atual. `ownership.test.ts` registra isso num
-comentário. É uma decisão de produto, sem ADR ainda. O ADR-0008 trata só
+comentário. É uma decisão de produto, sem ADR ainda. O ADR-0012 trata só
 o caso de conta apagada.

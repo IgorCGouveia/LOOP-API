@@ -48,7 +48,7 @@ describe("Gaps de cobertura fechados", () => {
         otherUserId = otherUser.id;
         otherUserToken = otherUser.accessToken;
 
-        // admin gravado no banco, não um JWT com id inventado (ADR-0008)
+        // admin gravado no banco, não um JWT com id inventado (ADR-0012)
         const admin = await createAdmin({ prefix: "admin-gaps" });
         adminId = admin.id;
         adminToken = admin.token;

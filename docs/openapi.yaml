@@ -1,0 +1,779 @@
+openapi: 3.0.3
+info:
+  title: LOOP API
+  version: 1.0.0
+  description: |
+    API REST de um rastreador de hábitos: cadastro e login com JWT, hábitos com
+    agenda versionada (diária, dias da semana ou a cada N dias), check-ins e
+    streaks calculados no fuso horário do usuário.
+
+    **Envelope de sucesso:** toda resposta 2xx vem como `{ "message": string, "data": T }`.
+
+    **Envelope de erro:** toda resposta de erro tem `error: string`. Erros de
+    validação (Zod) trazem também `details` com um item por campo inválido.
+
+    **Autenticação:** faça `POST /login`, copie `data.accessToken` e clique em
+    **Authorize**. O token vale 1 hora.
+  license:
+    name: MIT
+    url: https://github.com/IgorCGouveia/LOOP-API/blob/main/LICENSE
+servers:
+  - url: https://loop-api-jade.vercel.app
+    description: Produção (Vercel)
+  - url: http://localhost:3333
+    description: Local
+tags:
+  - name: Auth
+    description: Login, renovação e logout
+  - name: Users
+    description: Cadastro e gestão de contas
+  - name: Habits
+    description: Hábitos e agenda (schedule)
+  - name: Check-ins
+    description: Registro diário e streaks
+
+paths:
+  /users:
+    post:
+      tags: [Users]
+      summary: Criar conta
+      description: |
+        Rate limit: 5 requisições por hora por IP. O `timezone` é obrigatório,
+        precisa ser um identificador IANA e não pode ser alterado depois
+        (ver ADR-0002).
+      operationId: createUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateUserInput' }
+      responses:
+        '201':
+          description: Usuário criado
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - properties:
+                      data: { $ref: '#/components/schemas/User' }
+              example:
+                message: Usuário criado com sucesso.
+                data: { id: tz4a98xxat96iws9zmbrgj3a, email: ana@example.com, name: Ana Silva, role: USER }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '409':
+          description: Email já cadastrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example: { error: Email já cadastrado. }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalError' }
+    get:
+      tags: [Users]
+      summary: Listar todos os usuários
+      description: Somente `ADMIN`.
+      operationId: listUsers
+      responses:
+        '200':
+          description: Lista de usuários
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /users/{id}:
+    parameters:
+      - $ref: '#/components/parameters/UserIdPath'
+    patch:
+      tags: [Users]
+      summary: Atualizar a própria conta
+      description: |
+        Somente o dono da conta. Atualização parcial de `name`, `email` e
+        `password`. Qualquer outra chave (`timezone`, `role`...) é rejeitada
+        com 400 e nada é gravado.
+      operationId: updateUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateUserInput' }
+      responses:
+        '200':
+          description: Usuário atualizado
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - properties:
+                      data: { $ref: '#/components/schemas/User' }
+        '400':
+          description: Corpo vazio, campo inválido ou chave não permitida
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ValidationError' }
+              examples:
+                chaveProibida:
+                  summary: Tentou trocar o timezone
+                  value:
+                    error: Dados inválidos.
+                    details: [{ campo: '', message: 'Campo não pode ser alterado: timezone.' }]
+                vazio:
+                  summary: Corpo sem nenhum campo
+                  value: { error: Nenhum dado para atualizar foi fornecido. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: Email já pertence a outra conta
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    delete:
+      tags: [Users]
+      summary: Excluir conta
+      description: |
+        O dono pode excluir a própria conta. Um `ADMIN` pode excluir contas de
+        `USER`, mas não de outro `ADMIN`. Hábitos e check-ins são apagados em cascata.
+      operationId: deleteUser
+      responses:
+        '200':
+          description: Usuário excluído
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - properties:
+                      data: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /login:
+    post:
+      tags: [Auth]
+      summary: Login
+      description: |
+        Devolve um `accessToken` (JWT, 1 hora) no corpo e grava um cookie
+        `httpOnly` chamado `refreshToken` (7 dias), usado só pelo cliente web.
+
+        Proteção contra força bruta em duas camadas:
+        - 20 requisições por minuto por IP;
+        - por email: depois de 3 falhas seguidas, a resposta é atrasada de
+          propósito (1s, 2s, depois 5s), inclusive quando a senha está certa.
+          Se já houver 3 tentativas aguardando para o mesmo email, a próxima
+          recebe 429 na hora.
+
+        Email inexistente e senha errada devolvem a mesma resposta, para não
+        revelar quais emails têm conta.
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginInput' }
+      responses:
+        '200':
+          description: Login realizado
+          headers:
+            Set-Cookie:
+              description: '`refreshToken=...; HttpOnly; Path=/` (com `Secure; SameSite=None` em produção)'
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - properties:
+                      data: { $ref: '#/components/schemas/AccessToken' }
+        '400':
+          description: Email ou senha ausentes
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example: { error: Campos não preenchidos. }
+        '401':
+          description: Credenciais inválidas
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example: { error: Email ou senha incorretos. }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /refresh:
+    post:
+      tags: [Auth]
+      summary: Renovar o access token
+      description: |
+        Usa o cookie `refreshToken` gravado no login. Não precisa de corpo nem
+        de header `Authorization`. Não há rotação: o mesmo cookie continua
+        valendo até expirar ou até `POST /logout`.
+      operationId: refresh
+      security:
+        - refreshCookie: []
+      responses:
+        '200':
+          description: Novo access token
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - properties:
+                      data: { $ref: '#/components/schemas/AccessToken' }
+        '401':
+          description: Cookie ausente, inválido, expirado ou revogado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example: { error: Refresh token inválido ou expirado. }
+
+  /logout:
+    post:
+      tags: [Auth]
+      summary: Logout
+      description: Revoga o refresh token do cookie e limpa o cookie. Idempotente, responde 200 mesmo sem cookie.
+      operationId: logout
+      security: []
+      responses:
+        '200':
+          description: Logout realizado
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - properties:
+                      data: { nullable: true, example: null }
+              example: { message: Logout realizado com sucesso., data: null }
+
+  /habits:
+    post:
+      tags: [Habits]
+      summary: Criar hábito
+      description: O hábito pertence ao usuário do token. Sem `schedule`, o padrão é `DAILY` com meta 1.
+      operationId: createHabit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateHabitInput' }
+            examples:
+              diario:
+                summary: Diário (schedule padrão)
+                value: { name: Beber água, description: 2L por dia }
+              semanal:
+                summary: Segunda, quarta e sexta
+                value: { name: Academia, schedule: { type: WEEKLY, targetPerDay: 1, daysOfWeek: [1, 3, 5] } }
+              intervalo:
+                summary: A cada 3 dias, 2 vezes no dia
+                value: { name: Regar plantas, schedule: { type: INTERVAL, targetPerDay: 2, intervalDays: 3 } }
+      responses:
+        '201':
+          description: Hábito criado
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - properties:
+                      data: { $ref: '#/components/schemas/Habit' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    get:
+      tags: [Habits]
+      summary: Listar todos os hábitos
+      description: Somente `ADMIN`.
+      operationId: listAllHabits
+      responses:
+        '200': { $ref: '#/components/responses/HabitList' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /me/habits:
+    get:
+      tags: [Habits]
+      summary: Listar os meus hábitos
+      operationId: listMyHabits
+      responses:
+        '200': { $ref: '#/components/responses/HabitList' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /users/{userId}/habits:
+    parameters:
+      - $ref: '#/components/parameters/UserIdParam'
+    get:
+      tags: [Habits]
+      summary: Listar os hábitos de um usuário
+      description: O próprio usuário ou um `ADMIN`.
+      operationId: listUserHabits
+      responses:
+        '200': { $ref: '#/components/responses/HabitList' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /habits/{id}:
+    parameters:
+      - $ref: '#/components/parameters/HabitIdPath'
+    patch:
+      tags: [Habits]
+      summary: Atualizar hábito
+      description: |
+        Somente o dono. `name` e `description` são parciais. Se `schedule`
+        vier, precisa ser o objeto completo de um dos três tipos.
+
+        Mudar a agenda não reescreve o passado: a versão atual é encerrada e
+        uma nova passa a valer a partir de hoje.
+      operationId: updateHabit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateHabitInput' }
+      responses:
+        '200':
+          description: Hábito atualizado
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - properties:
+                      data: { $ref: '#/components/schemas/Habit' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Habits]
+      summary: Excluir hábito
+      description: Somente o dono. Apaga também os check-ins e as versões de agenda.
+      operationId: deleteHabit
+      responses:
+        '200':
+          description: Hábito excluído. `data` é o hábito apagado, sem o campo `schedule`.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - properties:
+                      data: { $ref: '#/components/schemas/HabitBase' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /habits/{habitId}/checkin:
+    parameters:
+      - $ref: '#/components/parameters/HabitIdParam'
+    post:
+      tags: [Check-ins]
+      summary: Fazer check-in hoje
+      description: |
+        O dono do hábito ou um `ADMIN`. "Hoje" é calculado no fuso horário do
+        dono do hábito, não no de quem chama. Pode ser chamado várias vezes
+        no mesmo dia quando `targetPerDay > 1`.
+      operationId: createCheckin
+      responses:
+        '201':
+          description: Check-in registrado, com streak recalculado
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - properties:
+                      data: { $ref: '#/components/schemas/CheckinResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Check-ins]
+      summary: Desfazer o último check-in
+      description: |
+        O dono do hábito ou um `ADMIN`. O desfazer é gravado como um evento
+        novo; o check-in original some das listagens, mas continua no banco.
+      operationId: undoCheckin
+      responses:
+        '200':
+          description: Check-in desfeito
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - properties:
+                      data:
+                        type: object
+                        properties:
+                          currentStreak: { type: integer, example: 2 }
+                          longestStreak: { type: integer, example: 5 }
+        '400':
+          description: Não há check-in para desfazer
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example: { error: Nenhum check-in para desfazer. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /habits/{habitId}/checkins:
+    parameters:
+      - $ref: '#/components/parameters/HabitIdParam'
+    get:
+      tags: [Check-ins]
+      summary: Listar check-ins de um hábito
+      description: O dono do hábito ou um `ADMIN`. Só check-ins que não foram desfeitos, do mais recente para o mais antigo.
+      operationId: listHabitCheckins
+      responses:
+        '200': { $ref: '#/components/responses/CheckinList' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /users/{userId}/checkins:
+    parameters:
+      - $ref: '#/components/parameters/UserIdParam'
+    get:
+      tags: [Check-ins]
+      summary: Listar check-ins de um usuário
+      description: O próprio usuário ou um `ADMIN`. Check-ins de todos os hábitos do usuário.
+      operationId: listUserCheckins
+      responses:
+        '200': { $ref: '#/components/responses/CheckinList' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: '`data.accessToken` devolvido por `POST /login`. Expira em 1 hora.'
+    refreshCookie:
+      type: apiKey
+      in: cookie
+      name: refreshToken
+      description: Cookie httpOnly gravado por `POST /login`. Expira em 7 dias.
+
+  parameters:
+    UserIdPath:
+      name: id
+      in: path
+      required: true
+      description: ID do usuário (cuid2)
+      schema: { type: string, example: tz4a98xxat96iws9zmbrgj3a }
+    UserIdParam:
+      name: userId
+      in: path
+      required: true
+      description: ID do usuário (cuid2)
+      schema: { type: string, example: tz4a98xxat96iws9zmbrgj3a }
+    HabitIdPath:
+      name: id
+      in: path
+      required: true
+      description: ID do hábito (cuid2)
+      schema: { type: string, example: a7796tjzqv0aa1fpwxkd4dlk }
+    HabitIdParam:
+      name: habitId
+      in: path
+      required: true
+      description: ID do hábito (cuid2)
+      schema: { type: string, example: a7796tjzqv0aa1fpwxkd4dlk }
+
+  responses:
+    ValidationError:
+      description: Corpo inválido
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ValidationError' }
+    Unauthorized:
+      description: Token ausente, inválido ou expirado
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example: { error: Token inválido ou expirado. }
+    Forbidden:
+      description: Autenticado, mas sem permissão sobre o recurso
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example: { error: Você não tem permissão. }
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example: { error: Hábito não encontrado. }
+    TooManyRequests:
+      description: Rate limit estourado
+      headers:
+        Retry-After:
+          description: Segundos até poder tentar de novo
+          schema: { type: integer }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ServerError' }
+          example: { statusCode: 429, error: Too Many Requests, reqId: req-1a }
+    InternalError:
+      description: Erro inesperado. Nenhum detalhe interno é exposto; o `reqId` localiza o erro no log.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ServerError' }
+          example: { statusCode: 500, error: Internal Server Error, reqId: req-1a }
+    HabitList:
+      description: Lista de hábitos
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Envelope'
+              - properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Habit' }
+    CheckinList:
+      description: Lista de check-ins efetivos, do mais recente para o mais antigo
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Envelope'
+              - properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Checkin' }
+
+  schemas:
+    Envelope:
+      type: object
+      required: [message, data]
+      properties:
+        message: { type: string, example: Operação realizada com sucesso. }
+        data: {}
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+
+    ValidationError:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string, example: Dados inválidos. }
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              campo: { type: string, description: 'Caminho do campo (`schedule.daysOfWeek`). Vazio para erros do objeto inteiro.', example: email }
+              message: { type: string, example: Formato de email inválido. }
+
+    ServerError:
+      type: object
+      required: [statusCode, error, reqId]
+      properties:
+        statusCode: { type: integer }
+        error: { type: string }
+        reqId: { type: string }
+
+    Role:
+      type: string
+      enum: [USER, ADMIN]
+      description: Não existe rota para virar `ADMIN`; o papel é alterado direto no banco.
+
+    User:
+      type: object
+      description: '`password` e `timezone` nunca são devolvidos.'
+      properties:
+        id: { type: string, example: tz4a98xxat96iws9zmbrgj3a }
+        email: { type: string, format: email, example: ana@example.com }
+        name: { type: string, example: Ana Silva }
+        role: { $ref: '#/components/schemas/Role' }
+
+    CreateUserInput:
+      type: object
+      required: [name, email, password, confirmPassword, timezone]
+      properties:
+        name: { type: string, minLength: 3, maxLength: 50, example: Ana Silva }
+        email: { type: string, format: email, example: ana@example.com }
+        password: { type: string, format: password, minLength: 8, maxLength: 128, example: senha12345 }
+        confirmPassword: { type: string, format: password, minLength: 8, description: Precisa ser igual a `password`., example: senha12345 }
+        timezone:
+          type: string
+          description: Identificador IANA (`Intl.supportedValuesOf('timeZone')`). Não aceita `GMT-3` nem nomes livres.
+          example: America/Sao_Paulo
+
+    UpdateUserInput:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      description: Qualquer chave fora desta lista gera 400.
+      properties:
+        name: { type: string, minLength: 3, maxLength: 50 }
+        email: { type: string, format: email }
+        password: { type: string, format: password, minLength: 8, maxLength: 128 }
+        confirmPassword: { type: string, format: password, minLength: 8, description: Obrigatório e igual a `password` quando `password` vier. }
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email, example: ana@example.com }
+        password: { type: string, format: password, example: senha12345 }
+
+    AccessToken:
+      type: object
+      properties:
+        accessToken: { type: string, description: JWT HS256, example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... }
+        expiresIn: { type: string, example: 1 hora }
+        id: { type: string, example: tz4a98xxat96iws9zmbrgj3a }
+        name: { type: string, example: Ana Silva }
+        role: { $ref: '#/components/schemas/Role' }
+
+    ScheduleInput:
+      description: União discriminada por `type`. Cada tipo aceita só os próprios campos.
+      oneOf:
+        - $ref: '#/components/schemas/DailySchedule'
+        - $ref: '#/components/schemas/WeeklySchedule'
+        - $ref: '#/components/schemas/IntervalSchedule'
+      discriminator:
+        propertyName: type
+        mapping:
+          DAILY: '#/components/schemas/DailySchedule'
+          WEEKLY: '#/components/schemas/WeeklySchedule'
+          INTERVAL: '#/components/schemas/IntervalSchedule'
+
+    DailySchedule:
+      type: object
+      required: [type, targetPerDay]
+      properties:
+        type: { type: string, enum: [DAILY] }
+        targetPerDay: { type: integer, minimum: 1, example: 1 }
+
+    WeeklySchedule:
+      type: object
+      required: [type, targetPerDay, daysOfWeek]
+      properties:
+        type: { type: string, enum: [WEEKLY] }
+        targetPerDay: { type: integer, minimum: 1, example: 1 }
+        daysOfWeek:
+          type: array
+          minItems: 1
+          description: 0 = domingo, 6 = sábado
+          items: { type: integer, minimum: 0, maximum: 6 }
+          example: [1, 3, 5]
+
+    IntervalSchedule:
+      type: object
+      required: [type, targetPerDay, intervalDays]
+      properties:
+        type: { type: string, enum: [INTERVAL] }
+        targetPerDay: { type: integer, minimum: 1, example: 1 }
+        intervalDays: { type: integer, minimum: 1, example: 3 }
+
+    CreateHabitInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 3, maxLength: 50, description: Espaços nas pontas são removidos., example: Beber água }
+        description: { type: string, maxLength: 250, example: 2L por dia }
+        schedule: { $ref: '#/components/schemas/ScheduleInput' }
+
+    UpdateHabitInput:
+      type: object
+      minProperties: 1
+      properties:
+        name: { type: string, minLength: 3, maxLength: 50 }
+        description: { type: string, maxLength: 250 }
+        schedule: { $ref: '#/components/schemas/ScheduleInput' }
+
+    ScheduleVersion:
+      type: object
+      description: Versão de agenda vigente. Editar a agenda fecha esta versão e abre outra.
+      properties:
+        id: { type: string }
+        habitId: { type: string }
+        type: { type: string, enum: [DAILY, WEEKLY, INTERVAL] }
+        targetPerDay: { type: integer, example: 1 }
+        daysOfWeek: { type: array, items: { type: integer }, description: Vazio quando `type` não é `WEEKLY`. }
+        intervalDays: { type: integer, nullable: true, description: Só quando `type` é `INTERVAL`. }
+        effectiveFrom: { type: string, format: date-time, description: Dia (no fuso do usuário) em que a versão começou a valer., example: '2026-09-11T00:00:00.000Z' }
+        effectiveFromAt: { type: string, format: date-time }
+        effectiveTo: { type: string, format: date-time, nullable: true, description: '`null` na versão vigente.' }
+        effectiveToAt: { type: string, format: date-time, nullable: true }
+
+    HabitBase:
+      type: object
+      properties:
+        id: { type: string, example: a7796tjzqv0aa1fpwxkd4dlk }
+        name: { type: string, example: Beber água }
+        description: { type: string, nullable: true, example: 2L por dia }
+        userId: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        longestStreak: { type: integer, example: 5 }
+        longestStreakStartDate: { type: string, format: date-time, nullable: true }
+        graceTokens:
+          type: integer
+          minimum: 0
+          maximum: 3
+          description: Saldo de "streak freeze". Cobre um dia perdido; repõe 1 por mês até 3.
+          example: 1
+        graceTokensUpdatedAt: { type: string, format: date-time }
+
+    Habit:
+      allOf:
+        - $ref: '#/components/schemas/HabitBase'
+        - type: object
+          properties:
+            schedule:
+              allOf:
+                - $ref: '#/components/schemas/ScheduleVersion'
+              nullable: true
+
+    Checkin:
+      type: object
+      properties:
+        id: { type: string }
+        habitId: { type: string }
+        date: { type: string, format: date-time, description: 'Dia do check-in no fuso do usuário, gravado no momento da escrita.', example: '2026-09-11T00:00:00.000Z' }
+        checkedAt: { type: string, format: date-time, description: Instante exato em UTC. }
+        kind: { type: string, enum: [CHECKIN] }
+        undoesId: { type: string, nullable: true }
+
+    CheckinResult:
+      type: object
+      properties:
+        checkin: { $ref: '#/components/schemas/Checkin' }
+        currentStreak: { type: integer, example: 3 }
+        longestStreak: { type: integer, example: 5 }
+        graceTokens: { type: integer, example: 1 }
+        todayProgress:
+          type: object
+          nullable: true
+          description: Progresso do dia, útil quando `targetPerDay > 1`.
+          properties:
+            count: { type: integer, example: 1 }
+            target: { type: integer, example: 4 }

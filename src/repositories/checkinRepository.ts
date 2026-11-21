@@ -64,7 +64,7 @@ export async function getNetCountOnDay(habitId: string, day: Date, db: Db = pris
 }
 
 // `checkinId` é o CHECKIN que gastou o token — é por ele que o undo acha
-// o fill pra compensar (ADR-0004).
+// o fill pra compensar (ADR-0010).
 export async function insertGraceFill(habitId: string, date: Date, checkinId: string, db: Db = prisma) {
     return db.graceFill.create({ data: { habitId, date, checkinId } });
 }

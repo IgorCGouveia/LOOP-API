@@ -6,7 +6,7 @@ import { prisma } from "../db";
 import * as checkinRepository from "../repositories/checkinRepository";
 import { createBarrier, type Barrier } from "./helpers/barrier";
 
-// Corridas determinísticas (issues #18 e #20, ADR-0003). Em vez de torcer
+// Corridas determinísticas (issues #18 e #20, ADR-0009). Em vez de torcer
 // pelo timing, uma barreira segura as requisições num ponto exato do caso
 // de uso até as duas chegarem lá.
 let checkinBarrier: Barrier | null = null;
@@ -94,7 +94,7 @@ describe("requisições paralelas no mesmo hábito", () => {
         vi.useFakeTimers({ toFake: ["Date"] });
         const habitId = await habitWithOneDayGap("Sem trava");
 
-        // simula o código de antes do ADR-0003: nenhuma trava na linha do
+        // simula o código de antes do ADR-0009: nenhuma trava na linha do
         // hábito, só nas duas chamadas deste teste (Once, pra não vazar
         // pro próximo — clearAllMocks não restaura implementação)
         repo.lockHabit.mockImplementationOnce(async () => {}).mockImplementationOnce(async () => {});

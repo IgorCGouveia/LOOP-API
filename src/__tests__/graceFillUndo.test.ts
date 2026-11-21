@@ -4,7 +4,7 @@ import type { FastifyInstance } from "fastify";
 import { buildApp } from "../app";
 import { prisma } from "../db";
 
-// issue #21 / ADR-0004: desfazer o CHECKIN que gastou um grace token
+// issue #21 / ADR-0010: desfazer o CHECKIN que gastou um grace token
 // apaga o fill que ele criou e devolve o token.
 const at = (iso: string) => new Date(`${iso}T15:00:00.000Z`); // 12:00 em São Paulo
 const day = (iso: string) => new Date(`${iso}T00:00:00.000Z`);

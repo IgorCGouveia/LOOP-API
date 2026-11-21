@@ -20,7 +20,7 @@ Lista três tipos de sobra de escritas parciais de antes das issues #16,
 | Saída | O que é | Correção |
 |---|---|---|
 | `Hábitos sem HabitSchedule` | Hábito criado sem a 1ª versão da agenda. Nunca pontua streak. | Passo 2 |
-| `grace fill órfão` | Dia perdoado sem nenhum dia completo depois dele (check-in desfeito ou que falhou depois do fill). | Decisão à parte, ver [ADR-0004](../adr/0004-desfazer-check-in-devolve-grace-token.md) |
+| `grace fill órfão` | Dia perdoado sem nenhum dia completo depois dele (check-in desfeito ou que falhou depois do fill). | Decisão à parte, ver [ADR-0010](../adr/0010-desfazer-check-in-devolve-grace-token.md) |
 | `longestStreak inflado` | Recorde gravado acima do que o log sustenta. | Decisão à parte |
 
 Não grava nada.

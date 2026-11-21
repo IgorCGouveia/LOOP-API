@@ -54,7 +54,7 @@ check-in duas vezes.
 
 `GraceFill` não é evento do usuário, é estado derivado do gasto de um
 token. Desfazer o `CHECKIN` que criou um fill apaga esse fill e devolve
-o token ([ADR-0004](../adr/0004-desfazer-check-in-devolve-grace-token.md)).
+o token ([ADR-0010](../adr/0010-desfazer-check-in-devolve-grace-token.md)).
 Fills anteriores a `checkinId` (null) não são tocados.
 
 ### I4. Posse do recurso vem do banco
@@ -67,7 +67,7 @@ enviado pelo cliente. Por isso nenhum schema de UPDATE pode aceitar
 
 Criar/editar hábito, check-in e undo gravam numa transação só. Um `500`
 significa que nada foi gravado, e repetir não duplica nada
-([ADR-0003](../adr/0003-unidade-de-trabalho-por-caso-de-uso.md), teste
+([ADR-0009](../adr/0009-unidade-de-trabalho-por-caso-de-uso.md), teste
 em `src/__tests__/transactions.test.ts`). Hábito sem agenda, fill sem
 débito do token e `longestStreak` sem o check-in correspondente eram
 possíveis antes disso. `npm run audit:integrity` lista o que sobrou no

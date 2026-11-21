@@ -1,4 +1,4 @@
-# ADR-0003: Como garantir que cada caso de uso grave tudo ou nada?
+# ADR-0009: Como garantir que cada caso de uso grave tudo ou nada?
 
 - **Status:** Proposto
 - **Data:** 2026-11-20

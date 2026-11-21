@@ -9,7 +9,7 @@ import { bearer, createAdmin, createHabit, createUser, deleteUsers, type TestUse
 // listagens e os casos de "nada para desfazer".
 //
 // Admin nas rotas do hábito (POST/DELETE/GET /habits/:habitId/checkin(s))
-// fica de fora de propósito: é o ADR-0005, ainda Proposto.
+// fica de fora de propósito: é o ADR-0011, ainda Proposto.
 describe("Rotas aninhadas de check-in: acesso e respostas", () => {
     let app: FastifyInstance;
     let owner: TestUser;
