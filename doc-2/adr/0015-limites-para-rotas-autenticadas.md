@@ -4,7 +4,14 @@
 - **Data:** 2026-11-20
 - **Decisor:** dono do projeto
 - **Relacionado:** [auditoria de segurança, achado M6](../investigations/auditoria-seguranca-2026-11-20.md#m6-rotas-autenticadas-sem-limite-de-uso-nem-paginação),
-  [ADR-0013](./0013-como-a-api-descobre-o-ip-do-cliente.md)
+  [ADR-0013](./0013-como-a-api-descobre-o-ip-do-cliente.md),
+  [ADR-0017](./0017-paginacao.md)
+
+> **Decidir junto com o [ADR-0017](./0017-paginacao.md) (paginação).** A
+> parte de paginação deste ADR (opção B, paginação por cursor) se sobrepõe
+> ao ADR-0017, que veio da revisão de design. Os dois foram escritos em
+> paralelo e precisam ser decididos juntos, para não aceitar duas regras de
+> paginação diferentes.
 
 ## Contexto
 
