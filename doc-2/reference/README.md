@@ -33,6 +33,18 @@ Resolvidas:
 | `SECRET_KEY` | sim | Assinatura do JWT. O boot falha se ela estiver ausente, curta ou com valor de exemplo (`src/config/secretKey.ts`). |
 | `CORS_ORIGIN` | não | Origens liberadas, separadas por vírgula. Só o `loop-web` precisa. |
 | `DIRECT_URL` | só na Vercel | Conexão direta com o Neon, usada só pelas migrações no build (`scripts/vercel-migrate.mjs`). Na falta dela, `DATABASE_URL_UNPOOLED` e depois `DATABASE_URL`. |
+
+Na Vercel, `DATABASE_URL` e `DIRECT_URL` têm um valor por ambiente. Em
+`production` apontam para a branch `production` do Neon. Em `preview`
+apontam para a branch `preview` (`br-broad-unit-bbr7ozev`), criada em
+2026-11-21 a partir da produção e esvaziada, com só o schema e o histórico
+de migrações. As migrações rodam nos dois ambientes.
+
+Se a branch `preview` divergir (por exemplo, duas PRs com migrações
+diferentes), recrie-a: no Neon, "Reset from parent" na branch `preview`,
+depois `TRUNCATE` das tabelas de dados, mantendo `_prisma_migrations`.
+Nunca deixe as variáveis de preview apontarem para a branch `production`:
+o build de preview migraria produção com um schema não aprovado.
 | `NODE_ENV` | não | `production` deixa o cookie de refresh `Secure; SameSite=None` (`src/config/cookies.ts`). |
 | `PORT` / `HOST` | não | Padrão `3333` / `0.0.0.0` |
 
