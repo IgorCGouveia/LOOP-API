@@ -30,7 +30,7 @@ README da raiz, seção "Testes".
 
 | Camada | Onde | Velocidade | O que cobre |
 |---|---|---|---|
-| Unitário | `scheduleLogic.test.ts`, `streak.test.ts`, `date.test.ts`, `schemas.test.ts`, `secretKey.test.ts`, `attemptTracker.test.ts` | ms, sem banco | Regras puras: dia-alvo, streak, reposição de grace token, dia local, limites dos schemas, guard da chave, rate limit por conta |
+| Unitário | `scheduleLogic.test.ts`, `streak.test.ts`, `date.test.ts`, `schemas.test.ts`, `secretKey.test.ts`, `attemptTracker.test.ts`, `cookies.test.ts` | ms, sem banco | Regras puras: dia-alvo, streak, reposição de grace token, dia local, limites dos schemas, guard da chave, rate limit por conta, opções do cookie por ambiente |
 | Arquitetura | `checkinRepositoryBoundary.test.ts`, `layering.test.ts` | ms | Quem pode importar o quê. Leem o código-fonte, não executam |
 | Repositório e service | `pathA.test.ts`, `backfill.test.ts`, `transactions.test.ts` | dezenas de ms | Estado que a API não cria sozinha, falha no meio de uma transação |
 | Integração HTTP | o restante | dezenas de ms | Contrato, autorização, fluxo completo |
@@ -55,6 +55,7 @@ entra, ela entra aqui também.
 | `SECRET_KEY` ausente no runtime | 500 sem vazar detalhe | `gaps.test.ts`, `bugfixes.test.ts` |
 | Rota de admin com usuário comum / com token inválido | 403 / 401 | `auth.test.ts`, `authEdgeCases.test.ts` |
 | Token de conta apagada | **em aberto** (ADR-0008) | `deletedUserSession.test.ts` (`it.todo`) |
+| Cookie de refresh: sempre `httpOnly`; em produção `secure` + `sameSite: none`, fora dela `lax` | conforme o ambiente | `cookies.test.ts` |
 
 ### Autorização por recurso
 
@@ -155,5 +156,4 @@ teste novo até o ADR ser decidido.
 |---|---|---|
 | `ownership.test.ts` depende da ordem dos testes | Rodar um teste isolado pode dar outro resultado | Cada teste cria o próprio usuário |
 | `createUserAndLogin` copiado em vários arquivos | Mudança no cadastro exige editar N arquivos | Migrar para as factories |
-| `cookies.ts` com o ramo de produção sem teste | Config errada do cookie só aparece em produção | Teste com `NODE_ENV=production`. Ficou para depois porque a PR #25 (deploy) muda esse arquivo |
 | Admin nas rotas de check-in | Depende do ADR-0005 | Escrever os testes quando o ADR for decidido |

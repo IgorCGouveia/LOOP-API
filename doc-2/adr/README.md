@@ -12,6 +12,11 @@ Formato de Michael Nygard. Cada arquivo registra uma decisão. Use o
 - Um ADR `Proposto` lista as opções e não marca escolha. Quem decide é o
   dono do projeto.
 - O número é sequencial e não é reaproveitado.
+- Com várias PRs abertas ao mesmo tempo, o número segue a **ordem de
+  integração na `main`**: quem entra primeiro fica com o número, e cada
+  PR seguinte renumera os próprios ADRs para os próximos livres no rebase
+  antes do merge, junto com este índice e os links. Um ADR só tem número
+  definitivo depois de integrado.
 
 ## Índice
 
@@ -23,7 +28,3 @@ Formato de Michael Nygard. Cada arquivo registra uma decisão. Use o
 | [0004](./0004-desfazer-check-in-devolve-grace-token.md) | O que acontece com o grace fill quando o check-in que o criou é desfeito? | Proposto (recomendação A implementada) |
 | [0005](./0005-politica-de-acesso-ao-habito.md) | Admin pode agir nos check-ins de outra pessoa? | Proposto (recomendação A implementada) |
 | [0008](./0008-sessao-de-usuario-apagado.md) | O que um accessToken de conta apagada pode fazer? | Proposto |
-
-Os números 0006 e 0007 estão em uso na PR #25 (deploy na Vercel), ainda
-não integrada. Aquela PR também usa 0003 a 0005 para outros temas, e os
-números precisam ser renumerados quando ela for integrada.

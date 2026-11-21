@@ -109,7 +109,7 @@ entradas expiradas.
 **Perde**
 - É a opção mais complexa: tabela nova, limpeza periódica e uma consulta
   por requisição, igual à A.
-- No deploy serverless (PR #25), um cache em memória não serve, porque
+- No deploy serverless (Vercel, PR #27), um cache em memória não serve, porque
   cada instância teria a sua lista. Teria de ser banco ou um serviço
   externo.
 
