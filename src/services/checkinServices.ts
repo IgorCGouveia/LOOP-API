@@ -1,100 +1,29 @@
 import { prisma } from '../db';
 import * as checkinRepository from '../repositories/checkinRepository';
 import type { Db } from '../repositories/checkinRepository';
-import type { Habit, HabitSchedule } from '../generated/prisma/client';
+import type { Habit } from '../generated/prisma/client';
 import { getDateOnlyInTimezone } from '../utils/date';
 import { targetDaysBetween } from '../domain/schedule';
-
-const GRACE_TOKENS_CAP = 3;
-
-type Contiguity = (earlier: Date, later: Date) => boolean;
-
-// dois dias contam como contíguos pra streak se nenhum dia-alvo (pelo
-// schedule vigente em cada dia do meio) foi pulado entre eles — não é
-// mais "exatamente 1 dia de calendário", porque WEEKLY/INTERVAL têm
-// dias-alvo não-adjacentes no calendário.
-function buildContiguity(schedules: HabitSchedule[]): Contiguity {
-    return (earlier, later) => targetDaysBetween(schedules, earlier, later).length === 0;
-}
-
-// streak atual: sem janela fixa, conta a sequência contígua mais recente
-// (a "cauda" das datas distintas), pare no primeiro gap.
-function computeTailStreak(
-    datesDesc: Date[],
-    isContiguous: Contiguity,
-): { length: number; startDate: Date | null } {
-    if (datesDesc.length === 0) {
-        return { length: 0, startDate: null };
-    }
-
-    let length = 1;
-    let startDate = datesDesc[0];
-
-    for (let i = 1; i < datesDesc.length; i++) {
-        if (isContiguous(datesDesc[i], datesDesc[i - 1])) {
-            length++;
-            startDate = datesDesc[i];
-        } else {
-            break;
-        }
-    }
-
-    return { length, startDate };
-}
-
-// recorde histórico: varre o log inteiro. Só é chamado quando um undo
-// mexe na sequência que hoje detém o longestStreak.
-function recalculateLongestStreak(
-    datesAsc: Date[],
-    isContiguous: Contiguity,
-): { length: number; startDate: Date | null } {
-    if (datesAsc.length === 0) {
-        return { length: 0, startDate: null };
-    }
-
-    let longest = 1;
-    let longestStart = datesAsc[0];
-    let runLength = 1;
-    let runStart = datesAsc[0];
-
-    for (let i = 1; i < datesAsc.length; i++) {
-        if (isContiguous(datesAsc[i - 1], datesAsc[i])) {
-            runLength++;
-        } else {
-            runLength = 1;
-            runStart = datesAsc[i];
-        }
-
-        if (runLength > longest) {
-            longest = runLength;
-            longestStart = runStart;
-        }
-    }
-
-    return { length: longest, startDate: longestStart };
-}
-
-// meses corridos (UTC) entre duas datas — usado só pra saber quantas
-// reposições de grace token (+1/mês, calendário fixo) já eram devidas.
-function monthsElapsedUTC(from: Date, to: Date): number {
-    return (to.getUTCFullYear() - from.getUTCFullYear()) * 12 + (to.getUTCMonth() - from.getUTCMonth());
-}
+import {
+    GRACE_TOKENS_CAP,
+    buildContiguity,
+    computeTailStreak,
+    recalculateLongestStreak,
+    replenishedGraceBalance,
+} from '../domain/streak';
 
 async function replenishGraceTokens(habit: Habit, db: Db): Promise<number> {
     const now = new Date();
-    const elapsed = monthsElapsedUTC(habit.graceTokensUpdatedAt, now);
+    const { balance, changed } = replenishedGraceBalance(habit.graceTokens, habit.graceTokensUpdatedAt, now);
 
-    if (elapsed <= 0) {
-        return habit.graceTokens;
+    if (changed) {
+        await db.habit.update({
+            where: { id: habit.id },
+            data: { graceTokens: balance, graceTokensUpdatedAt: now },
+        });
     }
 
-    const newBalance = Math.min(habit.graceTokens + elapsed, GRACE_TOKENS_CAP);
-    await db.habit.update({
-        where: { id: habit.id },
-        data: { graceTokens: newBalance, graceTokensUpdatedAt: now },
-    });
-
-    return newBalance;
+    return balance;
 }
 
 // Check-in e undo são uma unidade de trabalho cada (issue #16, ADR-0003):
