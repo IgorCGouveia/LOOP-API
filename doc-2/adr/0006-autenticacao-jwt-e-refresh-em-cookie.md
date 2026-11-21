@@ -116,7 +116,12 @@ Motivos que o próprio código registra:
   que não existe no banco, e o middleware aceita
   (`src/__tests__/ownership.test.ts:55-58`).
 - **Mais difícil, aceito:** um refresh token vazado vale até expirar ou
-  até o logout. A única defesa é o `httpOnly`.
+  até o logout. A única defesa é o `httpOnly`. *Nota (2026-11-21):* o
+  logout da vítima não alcança uma cópia do cookie, porque só revoga o
+  token apresentado. Na prática, a cópia vale os 7 dias. Ver o achado S1
+  da [auditoria de 2026-11-21](../investigations/auditoria-arquitetura-deploy-2026-11-21.md)
+  e o [ADR-0014](./0014-reautenticacao-para-trocar-senha-ou-email.md).
+  A decisão de não rotacionar não muda.
 - **Mais difícil:** o `sameSite: "none"` deixa o navegador mandar o cookie
   em qualquer request cross-site. O `/refresh` não vaza o token, porque o
   CORS impede outra origem de ler a resposta. Mas um site qualquer

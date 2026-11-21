@@ -24,6 +24,18 @@ Consequências disso:
   e ficar com a conta.
 - Trocar a senha não expulsa quem já tem um refresh token da vítima.
 
+A [auditoria de 2026-11-21](../investigations/auditoria-arquitetura-deploy-2026-11-21.md)
+(conferida em `9315eda`) acrescenta dois pontos a este ADR:
+- **S2:** `DELETE /users/:id` usa o mesmo modelo de identidade
+  (`src/controllers/UserController.ts:78`). Com o access token, dá para
+  apagar a conta inteira em cascade, sem volta. As opções abaixo precisam
+  dizer se a senha atual também vale para a exclusão feita pelo próprio
+  dono.
+- **S1:** hoje não existe nenhuma revogação por usuário. O `/logout` só
+  revoga o cookie apresentado (`src/services/refreshTokenServices.ts:44`).
+  A revogação das opções A e D seria o primeiro caminho para a vítima
+  encerrar a sessão de quem copiou o cookie dela.
+
 Referência de mercado: o OWASP ASVS 4.0 pede a senha atual para trocar a
 senha (V2.1.6) e pede que trocar a senha permita encerrar as outras
 sessões (V3.3).
