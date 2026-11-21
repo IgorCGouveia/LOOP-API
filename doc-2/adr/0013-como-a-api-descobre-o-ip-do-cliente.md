@@ -4,7 +4,8 @@
 - **Data:** 2026-11-20, contexto revisado em 2026-11-21 com medição em produção
 - **Decisor:** dono do projeto
 - **Relacionado:** [auditoria de segurança, achado H1](../investigations/auditoria-seguranca-2026-11-20.md#h1-trustproxy-true-deixa-o-cliente-escolher-o-próprio-ip),
-  PR #27 (deploy na Vercel), [ADR-0015](./0015-limites-para-rotas-autenticadas.md)
+  PR #27 (deploy na Vercel), [ADR-0015](./0015-limites-para-rotas-autenticadas.md),
+  [ADR-0003](./0003-fastify-como-framework-http.md) (registra `trustProxy: true` como parte da escolha do Fastify; aceito este ADR, a linha sobre `trustProxy` passa a ser substituída por ele)
 
 
 ## Contexto

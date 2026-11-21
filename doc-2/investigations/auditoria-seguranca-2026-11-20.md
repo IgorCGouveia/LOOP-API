@@ -155,8 +155,8 @@ o cadastro em massa também fica livre.
 
 **Solução proposta:** confiar só no número de proxies que a hospedagem
 realmente tem, ou ler o header que o provedor garante. Qual dos dois
-depende de onde a API roda, e o branch de deploy está trocando Render
-por Vercel. Por isso a escolha está no
+depende de onde a API roda: a auditoria começou com a API no Render, e
+ela foi para a Vercel no PR #27. Por isso a escolha está no
 [ADR-0013](../adr/0013-como-a-api-descobre-o-ip-do-cliente.md). Qualquer
 opção precisa vir junto com o H2, porque o `fastify` 5.8.5 tem uma falha
 própria nesse mesmo recurso (GHSA-3m5p-2c4r-xxw2: falsificação de
@@ -379,8 +379,8 @@ está no [ADR-0015](../adr/0015-limites-para-rotas-autenticadas.md).
 | L2 | `src/Middleware/Auth.ts:47` | `jwt.verify` não fixa o algoritmo, e o payload é usado com `as TokenPayload` sem validação. O `alg=none` é rejeitado (verificado). O `role` no token continua valendo até 1h depois de o usuário ser rebaixado ou apagado. | `jwt.verify(token, key, { algorithms: ["HS256"] })` e validar o payload com um schema Zod (`id: z.cuid2()`, `role: z.enum(["USER","ADMIN"])`). | Existir uma tela para mudar papéis ou mais de um admin |
 | L3 | `src/Middleware/errorHandler.ts:21` | Todo `P2002` vira "Email já cadastrado.", inclusive violações de outras chaves únicas: dois undos simultâneos (`HabitLog.undoesId`), `GraceFill`, `HabitSchedule`. | Olhar `error.meta?.target` e só usar a mensagem de email quando a chave for `email`. Nos outros casos, um 409 genérico. | — |
 | L4 | `HabitController.ts:64-85`, `UserController.ts:40-46`, `CheckinController.ts:13-20` | O recurso é buscado antes de conferir o dono. ID inexistente dá 404, ID de outra pessoa dá 403. Dá para saber se um ID existe. Com cuid2 (impossível de adivinhar), o risco é baixo. | Responder 404 nos dois casos para quem não é dono nem admin. | IDs passarem a ser sequenciais ou expostos |
-| L5 | `src/services/attemptTracker.ts:1-3` | O delay de login guarda o estado na memória de um processo só. Com mais de uma instância, cada uma tem o seu contador. | Já tratado no branch de deploy (ADR-0006 lá, risco aceito). | Mais de uma instância em produção |
-| L6 | `package.json:24-35` | `tsx` e o CLI `prisma` estão em `dependencies`. Vão para a imagem de produção sem precisar. | Mover `tsx` para `devDependencies`. O `prisma` é usado no `start` (`migrate deploy`); revisar junto com o ADR-0004 do branch de deploy. | — |
+| L5 | `src/services/attemptTracker.ts:1-3` | O delay de login guarda o estado na memória de um processo só. Com mais de uma instância, cada uma tem o seu contador. | Ainda sem ADR na `main`. Na Vercel (PR #27), cada instância da função tem o próprio estado. Caminhos: store compartilhado (Postgres ou Redis no `@fastify/rate-limit` e no tracker) ou rate limit na borda (opção D do [ADR-0013](../adr/0013-como-a-api-descobre-o-ip-do-cliente.md)). | Já vale: a produção é serverless desde o PR #27 |
+| L6 | `package.json:24-35` | `tsx` e o CLI `prisma` estão em `dependencies`. Vão para a imagem de produção sem precisar. | Em `4d5a92b`, o `tsx` só é usado pelo `dev` e pelos scripts de manutenção (`package.json:11,14-16`). Movê-lo para `devDependencies` se esses scripts rodarem de um ambiente de desenvolvimento. O CLI `prisma` continua em `dependencies`, porque roda no `vercel-build` (`:17`) e no `start` (`:13`). | — |
 | L7 | `src/controllers/indexController.ts:64-66`, `:70-78` | O refresh token não é rotacionado e não detecta reuso (decisão registrada no antigo `DECISIONS.md`, que saiu do repositório). Um site de terceiros consegue chamar `/logout` e deslogar o usuário (CSRF de baixo impacto, porque o cookie é `sameSite: none`). | Registrar a decisão de não rotacionar num ADR, já que o arquivo original não existe mais. Rotação com detecção de reuso fica para quando houver cliente mobile. | Houver cliente mobile ou token de longa duração |
 
 ## O que já está bom
