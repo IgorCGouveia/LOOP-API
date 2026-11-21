@@ -14,6 +14,7 @@ Formato de Michael Nygard. Cada arquivo registra uma decisão. Use o
 - O número é sequencial e não é reaproveitado. Ele segue a ordem de
   integração na `main`: antes do merge, renumere o seu ADR para o próximo
   número livre na `main` e atualize o índice e os links no mesmo commit.
+  Um ADR só tem número definitivo depois de integrado.
 
 ## Índice
 
@@ -30,6 +31,7 @@ Formato de Michael Nygard. Cada arquivo registra uma decisão. Use o
 | [0009](./0009-unidade-de-trabalho-por-caso-de-uso.md) | Como garantir que cada caso de uso grave tudo ou nada? | Proposto (recomendação A implementada) |
 | [0010](./0010-desfazer-check-in-devolve-grace-token.md) | O que acontece com o grace fill quando o check-in que o criou é desfeito? | Proposto (recomendação A implementada) |
 | [0011](./0011-politica-de-acesso-ao-habito.md) | Admin pode agir nos check-ins de outra pessoa? | Proposto (recomendação A implementada) |
+| [0012](./0012-sessao-de-usuario-apagado.md) | O que um accessToken de conta apagada pode fazer? | Proposto |
 
 ## ADRs retroativos
 

@@ -1,6 +1,7 @@
 import { FastifyRequest, FastifyReply } from "fastify"
 import { ZodError } from "zod"
 import { Prisma } from "../generated/prisma";
+import { buildRateLimitError } from "./rateLimit";
 
 // models cujo unique só é violado por duas operações simultâneas no mesmo
 // hábito (check-in/undo). Repetir a requisição resolve.
@@ -20,6 +21,19 @@ function uniqueConflictMessage(meta: Record<string, unknown> | undefined): strin
         return "Outra operação no mesmo hábito terminou antes desta. Tente de novo.";
     }
     return "Registro duplicado.";
+}
+
+// mensagem fixa por status: a mensagem original do Fastify descreve o
+// parser por dentro e não segue o idioma da API.
+const CLIENT_ERROR_MESSAGES: Record<number, string> = {
+    400: "Corpo da requisição inválido.",
+    413: "Corpo da requisição grande demais.",
+    415: "Content-Type não suportado.",
+};
+
+function clientErrorStatus(error: unknown): number | null {
+    const status = (error as { statusCode?: unknown } | null)?.statusCode;
+    return typeof status === "number" && status >= 400 && status < 500 ? status : null;
 }
 
 export function errorHandler(error:Error, req: FastifyRequest, res: FastifyReply){
@@ -48,6 +62,18 @@ export function errorHandler(error:Error, req: FastifyRequest, res: FastifyReply
         if(error.code === "P2025"){
             return res.status(404).send({ error: "Registro não encontrado." });
         }
+    }
+
+    // erro que já chega com status de cliente: os do próprio Fastify (JSON
+    // malformado, Content-Type não suportado, corpo grande demais) e o
+    // objeto que o @fastify/rate-limit lança quando o limite estoura. Antes
+    // todos caíam no 500 abaixo, inclusive o 429 documentado.
+    const clientStatus = clientErrorStatus(error);
+    if(clientStatus === 429){
+        return res.status(429).send(buildRateLimitError(req));
+    }
+    if(clientStatus !== null){
+        return res.status(clientStatus).send({ error: CLIENT_ERROR_MESSAGES[clientStatus] ?? "Requisição inválida." });
     }
 
     // erro não previsto: loga completo no servidor (req.log carrega o reqId)

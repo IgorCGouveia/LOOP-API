@@ -32,12 +32,14 @@ A estrutura segue dois padrões comuns no mercado:
 
 - [Visão geral da arquitetura](./architecture/overview.md)
 - [Modelo de domínio e invariantes](./architecture/domain-model.md)
+- [Estratégia de testes](./architecture/testing-strategy.md)
 - [Glossário](./glossary.md)
 - [Registro de decisões (ADRs)](./adr/README.md)
 - Guias
   - [Backfill de agenda e auditoria de dados](./guides/backfill-habit-schedule.md)
 - Investigações
   - [Issue #15: PATCH /users deixa trocar o timezone](./investigations/issue-15-timezone-patch.md)
+  - [Auditoria da suíte de testes (2026-11-20)](./investigations/2026-11-20-auditoria-de-testes.md)
 
 ## Convenções
 

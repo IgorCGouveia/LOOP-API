@@ -1,5 +1,6 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import jwt from "jsonwebtoken";
+import { z } from "zod";
 
 declare module "fastify" {
     interface FastifyRequest {
@@ -10,10 +11,17 @@ declare module "fastify" {
     }
 }
 
-type TokenPayload = {
-    id: string;
-    role: string;
-};
+// formato do payload que signAccessToken emite. Assinatura válida não
+// garante formato válido: um token sem `id` chegava aos services como
+// `undefined` e virava 500 no Prisma.
+const TokenPayloadVal = z.object({
+    id: z.string().min(1),
+    role: z.enum(["USER", "ADMIN"]),
+});
+
+// só HS256, o algoritmo que signAccessToken usa. Fixar a lista impede que
+// o header do token escolha o algoritmo de verificação.
+const ACCEPTED_ALGORITHMS: jwt.Algorithm[] = ["HS256"];
 
 export default class Auth{
 
@@ -27,7 +35,14 @@ export default class Auth{
         return false;
     }
 
-    const token = bearer.split(" ")[1];
+    // RFC 6750: `Bearer <token>`, esquema sem diferença de caixa. Antes o
+    // esquema era ignorado e `Basic <jwt>` também passava.
+    const [scheme, token, ...rest] = bearer.trim().split(/\s+/);
+
+    if(scheme.toLowerCase() !== "bearer" || rest.length > 0){
+        res.status(401).send({ error: "Header Authorization inválido. Use: Bearer <token>." });
+        return false;
+    }
 
     if(!token){
         res.status(401).send({ error: "Não autorizado. Sem token." });
@@ -43,17 +58,24 @@ export default class Auth{
         return false;
     }
 
+    let decoded: unknown;
     try{
-        const autenticado = jwt.verify(token, secretKey) as TokenPayload;
-
-        req.user = {
-            id: autenticado.id,
-            role: autenticado.role
-        }
+        decoded = jwt.verify(token, secretKey, { algorithms: ACCEPTED_ALGORITHMS });
     }catch{
         res.status(401).send({ error: "Token inválido ou expirado." });
         return false;
     }
+
+    const payload = TokenPayloadVal.safeParse(decoded);
+    if(!payload.success){
+        res.status(401).send({ error: "Token inválido ou expirado." });
+        return false;
+    }
+
+    req.user = {
+        id: payload.data.id,
+        role: payload.data.role,
+    };
 
     return true;
 }

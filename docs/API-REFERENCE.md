@@ -86,7 +86,10 @@ cliente" no topo.
 2. `POST /login` — devolve `accessToken`. **No `loop-web`**, também seta
    um cookie `httpOnly` (`refreshToken`) — o navegador guarda e envia
    sozinho, o cliente nunca lê o valor.
-3. Toda rota protegida: header `Authorization: Bearer <accessToken>`
+3. Toda rota protegida: header `Authorization: Bearer <accessToken>`.
+   O esquema `Bearer` é obrigatório (maiúsculas ou minúsculas tanto faz).
+   `Basic <token>`, o token sozinho sem esquema, ou qualquer coisa depois
+   do token respondem `401`.
 4. **Quando o `accessToken` expira (1h):**
    - **Mobile**: não tem `/refresh` ainda — detectar `401` numa rota
      protegida e mandar de volta pro login.
@@ -113,6 +116,7 @@ caso ganha um campo `details` a mais, sem deixar de ter `error`.
 
 | Situação | Status | Corpo |
 |---|---|---|
+| Corpo que não é JSON válido | `400` | `{ "error": "Corpo da requisição inválido." }` |
 | Corpo inválido (Zod) | `400` | `{ "error": "Dados inválidos.", "details": [{ "campo": "email", "message": "Formato de email inválido." }, ...] }` |
 | Sem token / token inválido / login errado | `401` | `{ "error": "..." }` |
 | Autenticado mas sem permissão | `403` | `{ "error": "..." }` |
@@ -120,6 +124,8 @@ caso ganha um campo `details` a mais, sem deixar de ter `error`.
 | Conflito: email duplicado | `409` | `{ "error": "Email já cadastrado." }` |
 | Conflito: outra operação no mesmo hábito terminou antes | `409` | `{ "error": "Outra operação no mesmo hábito terminou antes desta. Tente de novo." }` — pode repetir a requisição |
 | Conflito: outro valor único repetido | `409` | `{ "error": "Registro duplicado." }` |
+| Corpo acima de 1 MiB | `413` | `{ "error": "Corpo da requisição grande demais." }` |
+| `Content-Type` diferente de `application/json` numa rota com corpo | `415` | `{ "error": "Content-Type não suportado." }` |
 | Rate limit estourado (IP ou conta) | `429` | `{ "statusCode": 429, "error": "Too Many Requests", "reqId": "..." }` + header `Retry-After` |
 | Erro não esperado / config ausente | `500` | `{ "statusCode": 500, "error": "Internal Server Error", "reqId": "..." }` — **nunca** vaza detalhe interno, use o `reqId` só se for debugar com quem tem acesso ao log do servidor |
 
@@ -182,7 +188,7 @@ Sem auth. Rate limit: 5/hora por IP.
 ```
 - `name`: 3-50 chars
 - `password`/`confirmPassword`: 8-128 chars, precisam ser iguais
-- `timezone`: identificador IANA válido (`Intl.supportedValuesOf('timeZone')`) — `"America/Sao_Paulo"`, não `"Sao Paulo"` nem `"GMT-3"`
+- `timezone`: identificador IANA válido (`Intl.supportedValuesOf('timeZone')`, mais `"UTC"`) — `"America/Sao_Paulo"`, não `"Sao Paulo"` nem `"GMT-3"`
 
 ```json
 // 201

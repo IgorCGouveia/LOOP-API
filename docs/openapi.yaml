@@ -11,9 +11,14 @@ info:
 
     **Envelope de erro:** toda resposta de erro tem `error: string`. Erros de
     validação (Zod) trazem também `details` com um item por campo inválido.
+    Em qualquer rota com corpo: corpo que não é JSON responde `400` sem
+    `details`, corpo acima de 1 MiB responde `413` e `Content-Type` diferente
+    de `application/json` responde `415`.
 
     **Autenticação:** faça `POST /login`, copie `data.accessToken` e clique em
-    **Authorize**. O token vale 1 hora.
+    **Authorize**. O token vale 1 hora. O header precisa ser
+    `Authorization: Bearer <token>`; outro esquema (`Basic`), token sem
+    esquema ou partes a mais respondem `401`.
   license:
     name: MIT
     url: https://github.com/IgorCGouveia/LOOP-API/blob/main/LICENSE
@@ -467,7 +472,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: '`data.accessToken` devolvido por `POST /login`. Expira em 1 hora.'
+      description: '`data.accessToken` devolvido por `POST /login`, enviado como `Authorization: Bearer <token>`. Expira em 1 hora.'
     refreshCookie:
       type: apiKey
       in: cookie
@@ -502,12 +507,12 @@ components:
 
   responses:
     ValidationError:
-      description: Corpo inválido
+      description: Corpo inválido. Falha de validação vem com `details`; corpo que não é JSON vem só com `error`.
       content:
         application/json:
           schema: { $ref: '#/components/schemas/ValidationError' }
     Unauthorized:
-      description: Token ausente, inválido ou expirado
+      description: Header ausente ou fora do formato `Bearer <token>`, ou token inválido, expirado ou com payload fora do formato
       content:
         application/json:
           schema: { $ref: '#/components/schemas/Error' }
@@ -622,7 +627,7 @@ components:
         confirmPassword: { type: string, format: password, minLength: 8, description: Precisa ser igual a `password`., example: senha12345 }
         timezone:
           type: string
-          description: Identificador IANA (`Intl.supportedValuesOf('timeZone')`). Não aceita `GMT-3` nem nomes livres.
+          description: Identificador IANA (`Intl.supportedValuesOf('timeZone')`) ou `UTC`. Não aceita `GMT-3` nem nomes livres.
           example: America/Sao_Paulo
 
     UpdateUserInput:

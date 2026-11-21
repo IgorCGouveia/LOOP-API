@@ -3,8 +3,9 @@ name: CI
 on:
   push:
     branches: [LOOP-v2, main]
+  # qualquer base, não só main: PR empilhada (base = branch de outra PR)
+  # também precisa de CI antes de ser integrada.
   pull_request:
-    branches: [main]
 
 jobs:
   test:
@@ -50,4 +51,6 @@ jobs:
 
       - run: npx prisma migrate deploy
 
-      - run: npm test
+      # roda a suíte com cobertura; falha se algum piso de
+      # vitest.config.ts (coverage.thresholds) for violado.
+      - run: npm run test:coverage
