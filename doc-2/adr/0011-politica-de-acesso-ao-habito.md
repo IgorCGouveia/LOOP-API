@@ -1,6 +1,6 @@
 # ADR-0011: Admin pode agir nos check-ins de outra pessoa?
 
-- **Status:** Proposto
+- **Status:** Aceito (opção A)
 - **Data:** 2026-11-20
 - **Decisor:** dono do projeto
 - **Relacionado:** issue #17; commit `2fce409`
@@ -45,7 +45,7 @@ qualquer pessoa.
 - Perde: um admin consegue fabricar ou apagar streak de outra pessoa sem
   rastro de quem fez.
 
-## Recomendação (implementada neste PR)
+## Recomendação
 
 Opção A, porque é o contrato já publicado. Mudar de ideia custa uma
 linha: `allowAdmin` vira `true` nas ações desejadas em
@@ -53,7 +53,11 @@ linha: `allowAdmin` vira `true` nas ações desejadas em
 
 ## Decisão
 
-<Preencher quando o status for Aceito.>
+Opção A, aceita pelo dono do projeto em 2026-11-21.
+
+As rotas no nível do hábito (editar, apagar, check-in, undo, listar
+check-ins) são só do dono, como diz o contrato publicado. Admin recebe
+`403`. A política mora em `src/Middleware/habitAccess.ts`.
 
 ## Consequências
 
