@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import jwt from "jsonwebtoken";
 import type { FastifyInstance } from "fastify";
-import { buildApp, prisma } from "../app";
+import { buildApp } from "../app";
+import { prisma } from "../db";
 
 describe("Auth middleware", () => {
     let app: FastifyInstance;

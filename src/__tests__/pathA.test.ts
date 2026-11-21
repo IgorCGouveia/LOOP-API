@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { prisma } from "../app";
+import { prisma } from "../db";
 import * as checkinRepository from "../repositories/checkinRepository";
 
 function day(iso: string): Date {

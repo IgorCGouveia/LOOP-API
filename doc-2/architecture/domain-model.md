@@ -10,7 +10,7 @@
 | `Habit` | Hábito de um usuário | Guarda `longestStreak` e `graceTokens`. |
 | `HabitSchedule` | Versão da agenda | Nunca recebe UPDATE no lugar. Editar fecha a versão vigente e abre outra. |
 | `HabitLog` | Evento `CHECKIN` ou `UNDO` | Só cresce, nada é apagado. `date` é o dia local, `checkedAt` é o instante. |
-| `GraceFill` | Dia perdoado por token | Tabela separada para `HabitLog` continuar significando só "fiz check-in". |
+| `GraceFill` | Dia perdoado por token | Tabela separada para `HabitLog` continuar significando só "fiz check-in". `checkinId` aponta para o `CHECKIN` que gastou o token. |
 | `RefreshToken` | Sessão do `loop-web` | Guarda só o hash sha256. |
 
 ## Invariantes
@@ -52,8 +52,23 @@ timezone (I1).
 grava um `UNDO` com `undoesId` único, então não dá para desfazer o mesmo
 check-in duas vezes.
 
+`GraceFill` não é evento do usuário, é estado derivado do gasto de um
+token. Desfazer o `CHECKIN` que criou um fill apaga esse fill e devolve
+o token ([ADR-0010](../adr/0010-desfazer-check-in-devolve-grace-token.md)).
+Fills anteriores a `checkinId` (null) não são tocados.
+
 ### I4. Posse do recurso vem do banco
 
 A checagem de dono usa o `userId` gravado no banco e nunca um valor
 enviado pelo cliente. Por isso nenhum schema de UPDATE pode aceitar
 `userId` (corrigido para hábitos no commit `8b1a04a`).
+
+### I5. Cada caso de uso grava tudo ou nada
+
+Criar/editar hábito, check-in e undo gravam numa transação só. Um `500`
+significa que nada foi gravado, e repetir não duplica nada
+([ADR-0009](../adr/0009-unidade-de-trabalho-por-caso-de-uso.md), teste
+em `src/__tests__/transactions.test.ts`). Hábito sem agenda, fill sem
+débito do token e `longestStreak` sem o check-in correspondente eram
+possíveis antes disso. `npm run audit:integrity` lista o que sobrou no
+banco ([roteiro](../guides/backfill-habit-schedule.md)).

@@ -215,7 +215,8 @@ http://localhost:3333/docs.
 | Script | What it does |
 |---|---|
 | `npm run dev` | Runs `src/server.ts` with `tsx watch` (no build step) |
-| `npm test` | Runs the Vitest suite once |
+| `npm test` | Runs the Vitest suite once (see [Tests](#tests)) |
+| `npm run test:db:up` / `test:db:down` | Starts / drops the disposable test Postgres |
 | `npm run build` | Generates the Prisma client and compiles to `dist/` |
 | `npm start` | Applies pending migrations, then runs `dist/server.js` |
 
@@ -236,20 +237,30 @@ See [`.env.example`](./.env.example).
 ### Tests
 
 ```bash
-npm test                    # full suite
-npx vitest run --coverage   # with a V8 coverage report
-npx tsc --noEmit            # type check (Vitest doesn't check types)
+npm run test:db:up                  # disposable Postgres in Docker, port 55432
+cp .env.test.example .env.test      # test-only values, git-ignored
+set -a; . ./.env.test; set +a; npx prisma migrate deploy
+npm test                            # full suite (loads .env.test automatically)
+npx vitest run --coverage           # with a V8 coverage report
+npx tsc --noEmit                    # type check (Vitest doesn't check types)
+npm run test:db:down                # stop it and drop the data
 ```
 
-The suite has about 85 tests across 16 files. Most are integration tests that
+The suite has about 118 tests across 19 files. Most are integration tests that
 send real HTTP requests through Fastify's `app.inject()` to a real Postgres,
-with no database mocks. Each test creates its own users and cleans them up,
-but use a separate database from your development one.
+with no database mocks. Each test creates its own users and cleans them up.
+
+The suite never touches the database in your `.env`: it refuses to run
+against a non-local host (except in CI or with `LOOP_TEST_ALLOW_REMOTE_DB=1`),
+because the tests create and delete data. If something is missing (variables,
+database down, pending migrations), `npm test` stops before running and says
+what to fix.
 
 What's covered: auth and token expiry, ownership and admin rules, schedule
 logic, streak and grace-token edge cases, timezone boundaries, refresh tokens,
-the login attempt tracker, the `SECRET_KEY` guard, and the OpenAPI coverage
-check.
+the login attempt tracker, the `SECRET_KEY` guard, the OpenAPI coverage
+check, all-or-nothing writes, and concurrent requests on the same habit
+(made deterministic with a barrier).
 
 **CI** ([`.github/workflows/ci.yml`](./.github/workflows/ci.yml)) runs on every
 push and pull request to `main`: it starts a Postgres 16 service, installs
@@ -426,7 +437,8 @@ http://localhost:3333/docs.
 | Script | O que faz |
 |---|---|
 | `npm run dev` | Roda `src/server.ts` com `tsx watch` (sem build) |
-| `npm test` | Roda a suíte do Vitest uma vez |
+| `npm test` | Roda a suíte do Vitest uma vez (ver [Testes](#testes)) |
+| `npm run test:db:up` / `test:db:down` | Sobe / derruba o Postgres descartável de teste |
 | `npm run build` | Gera o client do Prisma e compila para `dist/` |
 | `npm start` | Aplica migrações pendentes e roda `dist/server.js` |
 
@@ -447,20 +459,29 @@ Veja o [`.env.example`](./.env.example).
 ### Testes
 
 ```bash
-npm test                    # suíte completa
-npx vitest run --coverage   # com relatório de cobertura (V8)
-npx tsc --noEmit            # checagem de tipos (o Vitest não checa tipos)
+npm run test:db:up                  # Postgres descartável em Docker, porta 55432
+cp .env.test.example .env.test      # valores só de teste, fora do git
+set -a; . ./.env.test; set +a; npx prisma migrate deploy
+npm test                            # suíte completa (carrega o .env.test sozinho)
+npx vitest run --coverage           # com relatório de cobertura (V8)
+npx tsc --noEmit                    # checagem de tipos (o Vitest não checa tipos)
+npm run test:db:down                # derruba e apaga os dados
 ```
 
-São cerca de 85 testes em 16 arquivos. A maioria é de integração: manda
+São cerca de 118 testes em 19 arquivos. A maioria é de integração: manda
 requisições HTTP de verdade pelo `app.inject()` do Fastify para um Postgres
-real, sem mock de banco. Cada teste cria os próprios usuários e apaga depois,
-mas use um banco separado do de desenvolvimento.
+real, sem mock de banco. Cada teste cria os próprios usuários e apaga depois.
+
+A suíte nunca usa o banco do seu `.env`: ela se recusa a rodar contra um host
+que não seja local (fora do CI ou sem `LOOP_TEST_ALLOW_REMOTE_DB=1`), porque
+os testes criam e apagam dados. Se faltar algo (variáveis, banco fora do ar,
+migração pendente), o `npm test` para antes de rodar e diz o que corrigir.
 
 O que está coberto: autenticação e expiração de token, regras de dono e de
 admin, lógica de agenda, casos de borda de streak e grace token, virada de
 dia por fuso, refresh token, o rastreador de tentativas de login, o guard da
-`SECRET_KEY` e a checagem de cobertura da spec OpenAPI.
+`SECRET_KEY`, a checagem de cobertura da spec OpenAPI, escritas tudo-ou-nada
+e requisições paralelas no mesmo hábito (determinísticas, com barreira).
 
 O **CI** ([`.github/workflows/ci.yml`](./.github/workflows/ci.yml)) roda em
 todo push e pull request para a `main`: sobe um Postgres 16, instala as

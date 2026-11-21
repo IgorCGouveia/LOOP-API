@@ -1,6 +1,7 @@
 import { FastifyInstance } from "fastify";
 import HabitController from "../controllers/HabitController";
 import  Auth  from "../Middleware/Auth";
+import { requireHabitAccess } from "../Middleware/habitAccess";
 
 const habitController = new HabitController();
 
@@ -18,8 +19,8 @@ export async function habitRoutes(server: FastifyInstance){
 
     server.get("/habits", {preHandler: auth.admin}, habitController.GetAllHabits);
 
-    server.patch("/habits/:id", {preHandler: auth.user}, habitController.UpdateHabit);
+    server.patch("/habits/:id", {preHandler: [auth.user, requireHabitAccess("habit:update")]}, habitController.UpdateHabit);
 
-    server.delete("/habits/:id", {preHandler: auth.user}, habitController.DeleteHabit);
+    server.delete("/habits/:id", {preHandler: [auth.user, requireHabitAccess("habit:delete")]}, habitController.DeleteHabit);
 }
 

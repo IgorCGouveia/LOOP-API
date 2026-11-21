@@ -23,6 +23,7 @@ A estrutura segue dois padrões comuns no mercado:
 |---|---|---|
 | [`architecture/`](./architecture/) | Explicação | Visão geral, camadas, modelo de domínio e as regras de negócio que não aparecem nos tipos |
 | [`adr/`](./adr/) | Decisões | Um arquivo por decisão: contexto, opções, escolha, consequências |
+| [`guides/`](./guides/) | Guia | Passo a passo de tarefas manuais (backfill, auditoria de dados) |
 | [`investigations/`](./investigations/) | Análise | Investigação de um problema concreto (geralmente uma issue): o que acontece, por quê, como reproduzir |
 | [`reference/`](./reference/) | Referência | Contrato HTTP e configuração |
 | [`glossary.md`](./glossary.md) | Referência | Termos do domínio (dia local, dia-alvo, grace fill...) |
@@ -33,6 +34,8 @@ A estrutura segue dois padrões comuns no mercado:
 - [Modelo de domínio e invariantes](./architecture/domain-model.md)
 - [Glossário](./glossary.md)
 - [Registro de decisões (ADRs)](./adr/README.md)
+- Guias
+  - [Backfill de agenda e auditoria de dados](./guides/backfill-habit-schedule.md)
 - Investigações
   - [Issue #15: PATCH /users deixa trocar o timezone](./investigations/issue-15-timezone-patch.md)
 
@@ -59,8 +62,10 @@ existem mais no repositório:
 | Onde | Aponta para |
 |---|---|
 | `docs/API-REFERENCE.md:18` | `DECISIONS.md` |
-| `prisma/schema.prisma:106` | `docs/explain/DECISOES-NAO-IMPLEMENTADAS.md` |
-| `src/services/checkinServices.ts:45` | `docs/problems` |
+
+As referências em `prisma/schema.prisma` (`docs/explain/...`) e em
+`src/services/checkinServices.ts` (`docs/problems`) saíram no PR das
+issues #16–#23.
 
 A correção é trocar cada uma por um link para o ADR equivalente quando
 ele existir, ou remover a referência.

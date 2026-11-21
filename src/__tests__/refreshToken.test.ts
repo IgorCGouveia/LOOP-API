@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
 import type { FastifyInstance } from "fastify";
-import { buildApp, prisma } from "../app";
+import { buildApp } from "../app";
+import { prisma } from "../db";
 import { attemptTracker } from "../services/attemptTracker";
 import { REFRESH_COOKIE_NAME } from "../config/cookies";
 

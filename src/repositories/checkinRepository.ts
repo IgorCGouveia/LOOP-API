@@ -1,10 +1,25 @@
-import { prisma } from '../app';
-import type { HabitSchedule } from '../generated/prisma/client';
+import { prisma } from '../db';
+import type { HabitSchedule, Prisma } from '../generated/prisma/client';
+import { isCompleted } from '../domain/schedule';
 
-// Único módulo que toca prisma.habitLog/prisma.graceFill/prisma.habitSchedule
-// — enforced por src/__tests__/checkinRepositoryBoundary.test.ts.
+// Único módulo que toca habitLog/graceFill/habitSchedule, seja pelo client
+// global, seja pelo `tx` de uma transação — enforced por
+// src/__tests__/checkinRepositoryBoundary.test.ts.
+//
+// Unidade de trabalho (issue #20): as funções que um caso de uso chama
+// dentro de prisma.$transaction aceitam `db` no último parâmetro. Sem ele,
+// usam o client global e cada chamada é um commit próprio, como antes.
+export type Db = Prisma.TransactionClient;
 
-type LogEvent = { date: Date; kind: 'CHECKIN' | 'UNDO'; checkedAt: Date };
+// ---------- trava por hábito ----------
+
+// SELECT ... FOR UPDATE na linha do hábito: serializa check-in e undo do
+// mesmo hábito. Sem isso, duas requisições paralelas leem o mesmo log,
+// as duas acham o mesmo dia pulado e uma delas bate no unique de
+// GraceFill (issue #18). Só tem efeito dentro de uma transação.
+export async function lockHabit(db: Db, habitId: string): Promise<void> {
+    await db.$queryRaw`SELECT id FROM "Habit" WHERE id = ${habitId} FOR UPDATE`;
+}
 
 // ---------- eventos (HabitLog) ----------
 
@@ -13,13 +28,14 @@ export async function insertLogEvent(
     date: Date,
     kind: 'CHECKIN' | 'UNDO',
     undoesId?: string,
+    db: Db = prisma,
 ) {
-    return prisma.habitLog.create({ data: { habitId, date, kind, undoesId } });
+    return db.habitLog.create({ data: { habitId, date, kind, undoesId } });
 }
 
 // CHECKIN mais recente que ainda não foi desfeito (sem UNDO apontando pra ele).
-export async function findUndoableCheckIn(habitId: string) {
-    return prisma.habitLog.findFirst({
+export async function findUndoableCheckIn(habitId: string, db: Db = prisma) {
+    return db.habitLog.findFirst({
         where: { habitId, kind: 'CHECKIN', undoneBy: null },
         orderBy: { checkedAt: 'desc' },
     });
@@ -41,29 +57,37 @@ export async function findCheckInsByUser(userId: string) {
     });
 }
 
-export async function getNetCountOnDay(habitId: string, day: Date): Promise<number> {
-    const [checkins, undos] = await Promise.all([
-        prisma.habitLog.count({ where: { habitId, date: day, kind: 'CHECKIN' } }),
-        prisma.habitLog.count({ where: { habitId, date: day, kind: 'UNDO' } }),
-    ]);
+export async function getNetCountOnDay(habitId: string, day: Date, db: Db = prisma): Promise<number> {
+    const checkins = await db.habitLog.count({ where: { habitId, date: day, kind: 'CHECKIN' } });
+    const undos = await db.habitLog.count({ where: { habitId, date: day, kind: 'UNDO' } });
     return checkins - undos;
 }
 
-export async function insertGraceFill(habitId: string, date: Date) {
-    return prisma.graceFill.create({ data: { habitId, date } });
+// `checkinId` é o CHECKIN que gastou o token — é por ele que o undo acha
+// o fill pra compensar (ADR-0010).
+export async function insertGraceFill(habitId: string, date: Date, checkinId: string, db: Db = prisma) {
+    return db.graceFill.create({ data: { habitId, date, checkinId } });
+}
+
+// apaga o grace fill criado por um CHECKIN, se houver. Devolve quantos
+// apagou (0 ou 1): fills anteriores ao vínculo têm checkinId null e
+// nunca são achados aqui.
+export async function deleteGraceFillOfCheckIn(checkinId: string, db: Db = prisma): Promise<number> {
+    const { count } = await db.graceFill.deleteMany({ where: { checkinId } });
+    return count;
 }
 
 // ---------- schedule ----------
 
-export async function getScheduleVersions(habitId: string): Promise<HabitSchedule[]> {
-    return prisma.habitSchedule.findMany({
+export async function getScheduleVersions(habitId: string, db: Db = prisma): Promise<HabitSchedule[]> {
+    return db.habitSchedule.findMany({
         where: { habitId },
         orderBy: { effectiveFromAt: 'asc' },
     });
 }
 
-export async function getCurrentSchedule(habitId: string): Promise<HabitSchedule | null> {
-    return prisma.habitSchedule.findFirst({ where: { habitId, effectiveTo: null } });
+export async function getCurrentSchedule(habitId: string, db: Db = prisma): Promise<HabitSchedule | null> {
+    return db.habitSchedule.findFirst({ where: { habitId, effectiveTo: null } });
 }
 
 // evita N+1 quando uma listagem de hábitos precisa do schedule de cada um.
@@ -85,90 +109,79 @@ export type ScheduleInput = {
 // lugar, mesmo se os valores forem idênticos a uma versão anterior
 // (decisão de 04/09: sempre aceita o corte, sem detectar reversão).
 // `today` é o dia local de quem edita (timezone do dono do hábito).
-export async function createScheduleVersion(habitId: string, data: ScheduleInput, today: Date) {
+// Com `db`, roda dentro da transação de quem chama; sem ele, abre uma
+// própria (fechar a vigente e abrir a nova nunca podem se separar).
+export async function createScheduleVersion(
+    habitId: string,
+    data: ScheduleInput,
+    today: Date,
+    db?: Db,
+): Promise<HabitSchedule> {
+    if (!db) {
+        return prisma.$transaction((tx) => createScheduleVersion(habitId, data, today, tx));
+    }
+
     const now = new Date();
 
-    return prisma.$transaction(async (tx) => {
-        await tx.habitSchedule.updateMany({
-            where: { habitId, effectiveTo: null },
-            data: { effectiveTo: today, effectiveToAt: now },
-        });
+    await db.habitSchedule.updateMany({
+        where: { habitId, effectiveTo: null },
+        data: { effectiveTo: today, effectiveToAt: now },
+    });
 
-        return tx.habitSchedule.create({
-            data: {
-                habitId,
-                type: data.type,
-                targetPerDay: data.targetPerDay,
-                daysOfWeek: data.daysOfWeek ?? [],
-                intervalDays: data.intervalDays,
-                effectiveFrom: today,
-                effectiveFromAt: now,
-            },
-        });
+    return db.habitSchedule.create({
+        data: {
+            habitId,
+            type: data.type,
+            targetPerDay: data.targetPerDay,
+            daysOfWeek: data.daysOfWeek ?? [],
+            intervalDays: data.intervalDays,
+            effectiveFrom: today,
+            effectiveFromAt: now,
+        },
     });
 }
 
-// ---------- resolução de schedule por dia ----------
+// ---------- auditoria (src/scripts/audit-integrity.ts) ----------
 
-function coversDay(version: HabitSchedule, day: Date): boolean {
-    return (
-        version.effectiveFrom.getTime() <= day.getTime() &&
-        (version.effectiveTo === null || version.effectiveTo.getTime() >= day.getTime())
-    );
+export async function findHabitIdsWithoutSchedule(): Promise<string[]> {
+    const rows = await prisma.habit.findMany({ where: { schedules: { none: {} } }, select: { id: true } });
+    return rows.map((r) => r.id);
 }
 
-// DAILY sempre é dia-alvo; WEEKLY olha o dia da semana; INTERVAL conta
-// dias corridos desde que a versão passou a valer.
-export function isTargetDay(version: HabitSchedule, day: Date): boolean {
-    if (version.type === 'DAILY') return true;
-    if (version.type === 'WEEKLY') return version.daysOfWeek.includes(day.getUTCDay());
-
-    const elapsedDays = Math.round((day.getTime() - version.effectiveFrom.getTime()) / 86_400_000);
-    return elapsedDays >= 0 && elapsedDays % (version.intervalDays ?? 1) === 0;
+export async function findGraceFills(habitId: string) {
+    return prisma.graceFill.findMany({ where: { habitId }, orderBy: { date: 'asc' } });
 }
 
-// versão que vale pra um dia D: dentre as que cobrem D, a que começou
-// mais recentemente. Normalmente só uma versão cobre D; mais de uma
-// significa que D teve mais de uma edição de schedule antes de fechar.
-function lastVersionCovering(schedules: HabitSchedule[], day: Date): HabitSchedule | null {
-    const covering = schedules.filter((v) => coversDay(v, day));
-    if (covering.length === 0) return null;
-    return covering.reduce((latest, v) => (v.effectiveFromAt > latest.effectiveFromAt ? v : latest));
+// ---------- backfill de hábitos legados (src/scripts/habitScheduleBackfill.ts) ----------
+
+// versão com instante explícito: o backfill usa o createdAt do hábito como
+// effectiveFromAt, que é como a correção reconhece essas linhas depois.
+export async function insertBackfilledScheduleVersion(
+    habitId: string,
+    data: ScheduleInput,
+    effectiveFrom: Date,
+    effectiveFromAt: Date,
+    db: Db = prisma,
+): Promise<HabitSchedule> {
+    return db.habitSchedule.create({
+        data: {
+            habitId,
+            type: data.type,
+            targetPerDay: data.targetPerDay,
+            daysOfWeek: data.daysOfWeek ?? [],
+            intervalDays: data.intervalDays,
+            effectiveFrom,
+            effectiveFromAt,
+        },
+    });
 }
 
-// dentre as versões que cobriram D, a mais recente que ainda incluía D
-// como dia-alvo — usada só quando a versão vigente ao fim de D não
-// inclui mais D (selamento: tranca no estado de antes dela sair do alvo).
-function lastTargetingVersion(schedules: HabitSchedule[], day: Date): HabitSchedule | null {
-    const targeting = schedules.filter((v) => coversDay(v, day) && isTargetDay(v, day));
-    if (targeting.length === 0) return null;
-    return targeting.reduce((latest, v) => (v.effectiveFromAt > latest.effectiveFromAt ? v : latest));
+export async function getFirstScheduleVersion(habitId: string, db: Db = prisma): Promise<HabitSchedule | null> {
+    return db.habitSchedule.findFirst({ where: { habitId }, orderBy: { effectiveFromAt: 'asc' } });
 }
 
-function netCountOnDay(events: LogEvent[], day: Date, until?: Date): number {
-    return events.reduce((count, e) => {
-        if (e.date.getTime() !== day.getTime()) return count;
-        if (until && e.checkedAt.getTime() > until.getTime()) return count;
-        return count + (e.kind === 'CHECKIN' ? 1 : -1);
-    }, 0);
-}
-
-// completed(D): a versão que vale ao fim de D define o alvo. Se D
-// continua sendo dia-alvo por ela, reprojeta contra esse alvo (o dia
-// inteiro); se D saiu do alvo, tranca no estado acumulado até o
-// instante em que a última versão que ainda incluía D deixou de valer.
-function isCompleted(schedules: HabitSchedule[], events: LogEvent[], day: Date): boolean {
-    const current = lastVersionCovering(schedules, day);
-    if (!current) return false;
-
-    if (isTargetDay(current, day)) {
-        return netCountOnDay(events, day) >= current.targetPerDay;
-    }
-
-    const sealed = lastTargetingVersion(schedules, day);
-    if (!sealed) return false;
-
-    return netCountOnDay(events, day, sealed.effectiveToAt ?? undefined) >= sealed.targetPerDay;
+export async function setScheduleEffectiveFrom(scheduleId: string, effectiveFrom: Date, db: Db = prisma) {
+    return db.habitSchedule.update({ where: { id: scheduleId }, data: { effectiveFrom } });
 }
 
 /**
@@ -177,12 +190,19 @@ function isCompleted(schedules: HabitSchedule[], events: LogEvent[], day: Date):
  * unidos aos dias perdoados por token (GraceFill). `schedules`, se já
  * tiver sido buscado por quem chama, evita uma query repetida.
  */
-export async function getEffectiveLog(habitId: string, schedules?: HabitSchedule[]): Promise<Date[]> {
-    const [events, resolvedSchedules, graceFills] = await Promise.all([
-        prisma.habitLog.findMany({ where: { habitId }, select: { date: true, kind: true, checkedAt: true } }),
-        schedules ? Promise.resolve(schedules) : getScheduleVersions(habitId),
-        prisma.graceFill.findMany({ where: { habitId }, select: { date: true } }),
-    ]);
+export async function getEffectiveLog(
+    habitId: string,
+    schedules?: HabitSchedule[],
+    db: Db = prisma,
+): Promise<Date[]> {
+    // sequencial de propósito: dentro de uma transação interativa as
+    // queries dividem uma conexão só, então Promise.all não ganha nada.
+    const events = await db.habitLog.findMany({
+        where: { habitId },
+        select: { date: true, kind: true, checkedAt: true },
+    });
+    const resolvedSchedules = schedules ?? (await getScheduleVersions(habitId, db));
+    const graceFills = await db.graceFill.findMany({ where: { habitId }, select: { date: true } });
 
     const daysWithEvents = new Map<number, Date>();
     for (const e of events) daysWithEvents.set(e.date.getTime(), e.date);
@@ -196,19 +216,4 @@ export async function getEffectiveLog(habitId: string, schedules?: HabitSchedule
     for (const fill of graceFills) uniqueDates.set(fill.date.getTime(), fill.date);
 
     return Array.from(uniqueDates.values()).sort((a, b) => a.getTime() - b.getTime());
-}
-
-// dias-alvo estritamente entre from e to (exclusive nas duas pontas) —
-// usado pra saber se duas entradas da streak são contíguas (nenhum
-// dia-alvo pulado no meio) e pra achar o dia exato de um gap de 1
-// dia-alvo (grace period). Pura — recebe schedules já buscado.
-export function targetDaysBetween(schedules: HabitSchedule[], from: Date, to: Date): Date[] {
-    const result: Date[] = [];
-    let cursor = new Date(from.getTime() + 86_400_000);
-    while (cursor.getTime() < to.getTime()) {
-        const version = lastVersionCovering(schedules, cursor);
-        if (version && isTargetDay(version, cursor)) result.push(cursor);
-        cursor = new Date(cursor.getTime() + 86_400_000);
-    }
-    return result;
 }
