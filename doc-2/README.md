@@ -44,6 +44,7 @@ A estrutura segue dois padrões comuns no mercado:
 - Investigações
   - [Issue #15: PATCH /users deixa trocar o timezone](./investigations/issue-15-timezone-patch.md)
   - [Auditoria da suíte de testes (2026-11-20)](./investigations/2026-11-20-auditoria-de-testes.md)
+  - [Auditoria de segurança (2026-11-20)](./investigations/auditoria-seguranca-2026-11-20.md)
 
 ## Convenções
 
@@ -68,6 +69,10 @@ existem mais no repositório:
 | Onde | Aponta para |
 |---|---|
 | `docs/API-REFERENCE.md:18` | `DECISIONS.md` |
+| `src/__tests__/bugfixes.test.ts:7` | `docs/problems/PROBLEMAS.md` |
+| `src/config/cookies.ts:18` | `DECISIONS.md` |
+| `src/config/secretKey.ts:11` | `DECISIONS.md` |
+| `src/controllers/indexController.ts:45`, `:65` | `DECISIONS.md` (escopo do refresh token e a falta de rotação; ver o achado L7 da [auditoria de segurança](./investigations/auditoria-seguranca-2026-11-20.md)) |
 
 As referências em `prisma/schema.prisma` (`docs/explain/...`) e em
 `src/services/checkinServices.ts` (`docs/problems`) saíram no PR das
