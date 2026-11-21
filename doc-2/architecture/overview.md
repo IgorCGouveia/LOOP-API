@@ -5,8 +5,9 @@
 ## Contexto
 
 O LOOP é uma API REST sem frontend. Quem consome é um cliente mobile
-(stack ainda não escolhida) e um cliente web (`loop-web`). A API roda no
-Render e usa um PostgreSQL gerenciado.
+(stack ainda não escolhida) e um cliente web (`loop-web`). A API roda na
+Vercel, como Function serverless (`api/index.ts`), e usa PostgreSQL no Neon.
+Até 2026-11 rodava no Render.
 
 ```
 [app mobile] ──┐
